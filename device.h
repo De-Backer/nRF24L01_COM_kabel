@@ -28,7 +28,12 @@ extern "C"{
 #endif
 
 #include <avr/io.h>
-
+#include <avr/interrupt.h>
+/* te bekijken: <util/atomic.h>
+ * In order to implement atomic access to multi-byte objects,
+ * consider using the macros from <util/atomic.h>, rather than
+ * implementing them manually with cli() and sei().
+*/
 #define debug_SPI
 #define debug_USART
 #define debug_RF24L01
@@ -49,8 +54,15 @@ extern "C"{
 
 /* IO */
 
-//#define nRF_VDD_PORT PORTB
-//#define nRF_VDD_DDR  DDRB
+/* IC_CONFIG for setup RF24L01 on USART and USART_BAUDRATE, oder
+ * TBA...
+ * */
+#define IC_CONFIG_PORT PORTB
+#define IC_CONFIG_DDR  DDRB
+//#define IC_CONFIG  0
+
+#define nRF_VDD_PORT PORTB
+#define nRF_VDD_DDR  DDRB
 //#define nRF_VDD  1      /* voeding nRF24L01 */
 #define nRF_CEN_PORT PORTB
 #define nRF_CEN_DDR  DDRB
@@ -77,9 +89,10 @@ extern "C"{
  *
  */
 /* interupt */
-//#define nRF_IRQ_PORT PORTB
-//#define nRF_IRQ_DDR  DDRB
-//#define nRF_IRQ      3      // HIGH to LOW INT2 interrupt
+#define nRF_IRQ_PORT PORTB
+#define nRF_IRQ_DDR  DDRB
+#define nRF_IRQ      3      // HIGH to LOW INT2 interrupt
+#define nRF_IRQ_is_avr_interupt 1 // 1=yes 0=no
 
 /* SPI */
 #define nRF_SPI_PORT PORTB

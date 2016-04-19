@@ -64,6 +64,123 @@ void shutdown_RF24L01()
 #endif
 }
 
+void set_RF_channel_frequency(uint8_t frequency)
+{
+    /* resolution = 1MHz */
+
+    /* Set CSN Low */
+    nRF_CEN_PORT &=~(1 <<nRF_CSN);
+
+    asm ("nop");
+
+    send_spi(W_REGISTER+RF_CH);
+
+    /* set_RF_channel */
+    send_spi(frequency&0x7f);
+
+    /* Set CSN High */
+    nRF_CEN_PORT|=(1<<nRF_CSN);
+}
+
+void full_reset_RF24L01()
+{
+    if(nRF_CE_PORT&(1<<nRF_CE))
+    {
+        /* Set CE Low */
+        nRF_CE_PORT &=~(1<<nRF_CE);
+        /* Standby-1 or Power Down */
+    }
+    /* Set CSN Low */
+    nRF_CEN_PORT &=~(1 <<nRF_CSN);
+
+    asm ("nop");
+
+    /* Configuration Register */
+    send_spi(W_REGISTER+NRF_CONFIG);
+    send_spi(0x08);
+    /* Enable ‘Auto Acknowledgment’ */
+    send_spi(W_REGISTER+EN_AA);
+    send_spi(0x3f);
+    /* Enabled RX Addresses */
+    send_spi(W_REGISTER+EN_RXADDR);
+    send_spi(0x03);
+    /* Address Widths */
+    send_spi(W_REGISTER+SETUP_AW);
+    send_spi(0x03);
+    /* Setup of Automatic Retransmission */
+    send_spi(W_REGISTER+SETUP_RETR);
+    send_spi(0x03);
+    /* RF Channel */
+    send_spi(W_REGISTER+RF_CH);
+    send_spi(0x02);
+    /* RF Setup Register */
+    send_spi(W_REGISTER+RF_SETUP);
+    send_spi(0x0f);
+    /* Status Register */
+    send_spi(W_REGISTER+NRF_STATUS);
+    send_spi(0x7e);
+    /* Receive address data pipe 0 */
+    send_spi(W_REGISTER+RX_ADDR_P0);
+    send_spi(0xe7);
+    send_spi(0xe7);
+    send_spi(0xe7);
+    send_spi(0xe7);
+    send_spi(0xe7);
+    /* Receive address data pipe 1 */
+    send_spi(W_REGISTER+RX_ADDR_P1);
+    send_spi(0xc2);
+    send_spi(0xc2);
+    send_spi(0xc2);
+    send_spi(0xc2);
+    send_spi(0xc2);
+    /* Receive address data pipe 2 */
+    send_spi(W_REGISTER+RX_ADDR_P2);
+    send_spi(0xc3);
+    /* Receive address data pipe 3 */
+    send_spi(W_REGISTER+RX_ADDR_P3);
+    send_spi(0xc4);
+    /* Receive address data pipe 4 */
+    send_spi(W_REGISTER+RX_ADDR_P4);
+    send_spi(0xc5);
+    /* Receive address data pipe 5 */
+    send_spi(W_REGISTER+RX_ADDR_P5);
+    send_spi(0xc6);
+    /* Transmit address */
+    send_spi(W_REGISTER+TX_ADDR);
+    send_spi(0xe7);
+    send_spi(0xe7);
+    send_spi(0xe7);
+    send_spi(0xe7);
+    send_spi(0xe7);
+    /* Number of bytes in RX payload in data pipe 0 */
+    send_spi(W_REGISTER+RX_PW_P0);
+    send_spi(0x00);
+    /* Number of bytes in RX payload in data pipe 1 */
+    send_spi(W_REGISTER+RX_PW_P1);
+    send_spi(0x00);
+    /* Number of bytes in RX payload in data pipe 2 */
+    send_spi(W_REGISTER+RX_PW_P2);
+    send_spi(0x00);
+    /* Number of bytes in RX payload in data pipe 3 */
+    send_spi(W_REGISTER+RX_PW_P3);
+    send_spi(0x00);
+    /* Number of bytes in RX payload in data pipe 4 */
+    send_spi(W_REGISTER+RX_PW_P4);
+    send_spi(0x00);
+    /* Number of bytes in RX payload in data pipe 5 */
+    send_spi(W_REGISTER+RX_PW_P5);
+    send_spi(0x00);
+    /* Enable dynamic payload length */
+    send_spi(W_REGISTER+DYNPD);
+    send_spi(0x00);
+    /* Feature Register */
+    send_spi(W_REGISTER+FEATURE);
+    send_spi(0x00);
+
+    /* Set CSN High */
+    nRF_CEN_PORT|=(1<<nRF_CSN);
+}
+
 uint8_t Power_Down()
 {
     /* Set CSN Low */
@@ -98,6 +215,7 @@ uint8_t GetReg(uint8_t reg)
     nRF_CEN_PORT|=(1<<nRF_CSN);
     return reg;							//Return the registry read
 }
+
 uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal)
 {
     //ReadWrite --> "R" or "W", reg --> 'register', *val --> array with package, antVal --> number of int in array

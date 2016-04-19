@@ -33,11 +33,19 @@ extern "C"{
 #include "RF24L01.h"
 #include "device.h"
 
+
+
+uint8_t *data;
+
 void init_IO()
 {
     //DDR
     nRF_CE_DDR   |= (1<<nRF_CE) ;
     nRF_CEN_DDR  |= (1<<nRF_CSN);
+
+#ifdef IC_CONFIG
+    IC_CONFIG_DDR &= ~(1<<IC_CONFIG);
+#endif
 
 #ifdef nRF_IRQ
     nRF_IRQ_DDR  &= ~(1<<nRF_IRQ);
@@ -53,6 +61,10 @@ void init_IO()
 #ifdef nRF_IRQ
     nRF_IRQ_PORT |=(1<<nRF_IRQ);
 #endif
+
+#ifdef IC_CONFIG
+    IC_CONFIG_PORT |=(1<<IC_CONFIG);
+#endif
 }
 int main(void)
 {
@@ -66,14 +78,15 @@ int main(void)
     start_up_RF24L01();
     /* nRF24L01 Power Down Mode */
 #ifndef nRF_VDD
-    Power_Down();
     /* no Reset Values! => full setup nRF24L01 */
-
+    full_reset_RF24L01();
 #endif
-    /* setup nRF24L01 */
-    /* RX
+    /* setup nRF24L01
      *
      * dit moet
+     *
+     * TX_ADDR == RX_ADDR_P0 => van de toestellen
+     *
      * RX_PW_P0 <- standaard op 0 (not used)!! moet min. 1 max. 32
      * RX_PW_P1 <- standaard op 0 (not used)!! option
      * RX_PW_P2 <- standaard op 0 (not used)!! option
@@ -82,6 +95,8 @@ int main(void)
      * RX_PW_P5 <- standaard op 0 (not used)!! option
      *
      * option:
+     * -RF_CH
+     * -RF_SETUP
      * -EN_RXADDR <- standaard op 0x03
      * -SETUP_AW
      * --RX_ADDR_P0 == TX_ADDR
@@ -89,8 +104,23 @@ int main(void)
      * --RX_ADDR_P3
      * --RX_ADDR_P4
      * --RX_ADDR_P5
-     * -RF_CH
-     * -RF_SETUP
+*/
+
+    /* min. setup */
+    uint8_t val[32]={32,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    WriteToNrf(W,RX_PW_P0,val,1);/* Payload width to 32 */
+    WriteToNrf(W,RX_PW_P1,val,1);/* Payload width to 32 */
+
+    /*  Enhanced ShockBurst */
+    val[0]=0x04;/* enabled Dynamic Payload Length */
+    WriteToNrf(W,FEATURE,val,1);
+    val[0]=0x03;/* enabled Dynamic Payload Length */
+    WriteToNrf(W,DYNPD,val,1);
+    /*Enable ‘Auto Acknowledgment’ => full_reset_RF24L01(); is standaard */
+    val[0]=0x1f;/* Setup of Automatic Retransmission */
+    WriteToNrf(W,SETUP_RETR,val,1);
+    /* RX
+     * option RX:
      *
      * als laatste de NRF_CONFIG
      * NRF_CONFIG <-standaard op TX, Power Down, interrupts on
@@ -98,40 +128,25 @@ int main(void)
 */
     /* TX
      *
-     * dit moet
-     * RX_PW_P0 <- standaard op 0 (not used)!! moet min. 1 max. 32
-     * RX_PW_P1 <- standaard op 0 (not used)!! option
-     * RX_PW_P2 <- standaard op 0 (not used)!! option
-     * RX_PW_P3 <- standaard op 0 (not used)!! option
-     * RX_PW_P4 <- standaard op 0 (not used)!! option
-     * RX_PW_P5 <- standaard op 0 (not used)!! option
-     *
-     * TX_ADDR == RX_ADDR_P0
-     *
-     * option:
+     * option TX:
      * -EN_AA <- standaard on
-     * -EN_RXADDR <- standaard op 0x03
-     * -SETUP_AW
-     * --RX_ADDR_P0 == TX_ADDR
-     * --RX_ADDR_P1
-     * --RX_ADDR_P3
-     * --RX_ADDR_P4
-     * --RX_ADDR_P5
-     * -RF_CH
      * -SETUP_RETR <- standaard op 250µs, Re-Transmit 3
-     * -RF_SETUP
      * -RX_PW_P0
      *
      * als laatste de NRF_CONFIG
      * NRF_CONFIG <-standaard op TX, Power Down, interrupts on
 */
 
-    /* min. setup */
-    uint8_t val[32]={32,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    WriteToNrf(W,RX_PW_P0,val,1);/* Payload width to 32 */
     /* start init RX or TX of nRF24L01 */
 
     //TBA
+#if nRF_IRQ_is_avr_interupt
+    /* setup interupt */
+    GICR |=(1<<INT2);// External Interrupt Request 2 Enable
+    GIFR |=(1<<INTF2);
+
+    sei();
+#endif
     for (;;)
     {
 
@@ -140,6 +155,55 @@ int main(void)
     return 0;
 }
 
+#if nRF_IRQ_is_avr_interupt
+
+ISR(INT2_vect)
+{
+    cli();
+    //nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+    uint8_t info = GetReg(NRF_STATUS);/* waarom un interupt? */
+    if(info&(1<<RX_DR))/* RX Data Ready */
+    {
+        /* lees data en clear bit RX_DR in NRF_STATUS */
+        data[0]=32;
+        if(GetReg(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
+        {
+            data=WriteToNrf(R,R_RX_PL_WID,data,1);
+        }
+        if(data[0]>32)/* flush RX FIFO */
+        {
+            WriteToNrf(W,FLUSH_RX,data,1);
+        } else {
+            //data=WriteToNrf(R,R_RX_PAYLOAD,data,pl_lenth);
+            /* data naar USART sturen */
+            /* maak un funxie met data buffer TBA */
+
+            /* Set CSN Low */
+            nRF_CEN_PORT &=~(1<<nRF_CSN);
+            asm ("nop");
+            send_spi(R_RX_PAYLOAD);
+            uint8_t var;
+            for (var = 0; var < data[0]; ++var) {
+                transmit_USART(send_spi(NOP));
+            }
+            /* Set CSN High */
+            nRF_CEN_PORT|=(1<<nRF_CSN);
+        }
+        data[0]=(1<<RX_DR);/* clear bit RX_DR in NRF_STATUS */
+        WriteToNrf(W,NRF_STATUS,data,1);
+    }
+    if(info&(1<<TX_DS))/* Data sent */
+    {
+        /* clear bit TX_DS in NRF_STATUS en reset pin nRF_CE */
+    }
+    if(info&(1<<MAX_RT))/* Comm fale */
+    {
+        /* clear bit MAX_RT in NRF_STATUS */
+    }
+
+    sei();
+}
+#endif
 
 #ifdef __cplusplus
 } // extern "C"

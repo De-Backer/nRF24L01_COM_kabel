@@ -40,6 +40,8 @@ extern "C"{
 // setup RF24L01
 void start_up_RF24L01();
 void shutdown_RF24L01();
+void set_RF_channel_frequency(uint8_t frequency);
+void full_reset_RF24L01();
 uint8_t Power_Down();
 uint8_t GetReg(uint8_t reg);
 uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal);
