@@ -181,6 +181,55 @@ void full_reset_RF24L01()
     nRF_CEN_PORT|=(1<<nRF_CSN);
 }
 
+void nRF_IRQ_pin_triger()
+{
+    nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+
+    uint8_t info = GetReg(NRF_STATUS);/* waarom un interupt? */
+    if(info&(1<<RX_DR))/* RX Data Ready */
+    {
+        /* lees data en clear bit RX_DR in NRF_STATUS */
+        data[0]=32;
+        if(GetReg(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
+        {
+            data=WriteToNrf(R,R_RX_PL_WID,data,1);
+        }
+        if(data[0]>32)/* flush RX FIFO */
+        {
+            WriteToNrf(W,FLUSH_RX,data,1);
+        } else {
+            /* data naar USART sturen */
+            /* maak un funxie met data buffer TBA */
+
+            /* Set CSN Low */
+            nRF_CEN_PORT &=~(1<<nRF_CSN);
+            asm ("nop");
+            send_spi(R_RX_PAYLOAD);
+            uint8_t var;
+            for (var = 0; var < data[0]; ++var) {
+                transmit_USART(send_spi(NOP));
+            }
+            /* Set CSN High */
+            nRF_CEN_PORT|=(1<<nRF_CSN);
+
+        }
+        data[0]=(1<<RX_DR);/* clear bit RX_DR in NRF_STATUS */
+        WriteToNrf(W,NRF_STATUS,data,1);
+    }
+    if(info&(1<<TX_DS))/* Data sent */
+    {
+        /* clear bit TX_DS in NRF_STATUS en reset pin nRF_CE */
+        data[0]=(1<<TX_DS);/* clear bit TX_DS in NRF_STATUS */
+        WriteToNrf(W,NRF_STATUS,data,1);
+    }
+    if(info&(1<<MAX_RT))/* Comm fail */
+    {
+        /* clear bit MAX_RT in NRF_STATUS */
+        data[0]=(1<<MAX_RT);/* clear bit MAX_RT in NRF_STATUS */
+        WriteToNrf(W,NRF_STATUS,data,1);
+    }
+}
+
 uint8_t Power_Down()
 {
     /* Set CSN Low */
