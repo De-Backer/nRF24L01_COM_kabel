@@ -78,3 +78,6 @@ flash.commands = avrdude -p $${DEVICE} -c $${PROGRAMMER}
 flash.commands += -U flash:w:$${NAME}.hex
 
 flash.depends = $${NAME}.hex
+
+DISTFILES += \
+    README.md
