@@ -27,6 +27,16 @@
 extern "C"{
 #endif
 
+/*
+ * void nRF_IRQ_pin_triger()
+ * 1+1
+ * uint8_t Power_Down()
+ * 1
+ * uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal)
+ * 32+1
+ *
+ * => 36byte aan vars
+*/
 #define W 1
 #define R 0
 

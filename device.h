@@ -107,7 +107,6 @@ extern "C"{
 /* USART */
 #define USART_BAUDRATE 500000
 #define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
-
 uint8_t *data;
 
 #ifdef __cplusplus

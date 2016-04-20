@@ -28,13 +28,30 @@ extern "C"{
 #endif
 
 #include "device.h"
+/*
+ * 6+64+64byte = 134byte SRAM for de ring buffer
+ * ander geen vars gemaakt
+*/
+#define RB_usart_masker 0b00011111 /* 63byte masker */
+uint8_t RB_usart_RX_Start;
+uint8_t RB_usart_RX_Stop;
+uint8_t RB_usart_RX_lenkte;
+uint8_t RB_usart_TX_Start;
+uint8_t RB_usart_TX_Stop;
+uint8_t RB_usart_TX_lenkte;
+uint8_t RB_usart_RX[RB_usart_masker+1];
+uint8_t RB_usart_TX[RB_usart_masker+1];
 
 // setup USART
 void setup_USART();
 
 void transmit_USART(uint8_t data);
 void transmit_string_USART(char* data);
+uint8_t USART_RX_lenkte_RB();
+uint8_t USART_RX_RB();
 
+ISR(USART_RX_vect);
+ISR(USART_UDRE_vect);
 #ifdef __cplusplus
 } // extern "C"
 #endif

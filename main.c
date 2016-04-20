@@ -27,11 +27,12 @@
 extern "C"{
 #endif
 
+#include "device.h"
 #include "nRF24L01.h"
 #include "SPI.h"
 #include "USART.h"
 #include "RF24L01.h"
-#include "device.h"
+
 
 
 void init_IO()
@@ -163,6 +164,34 @@ int main(void)
             nRF_IRQ_was=1;
         }
 #endif
+
+        if(USART_RX_lenkte_RB()>5)
+        {
+            /* data from USART */
+
+            /* Set CSN Low */
+            nRF_CEN_PORT &=~(1 <<nRF_CSN);
+
+            asm ("nop");
+
+            send_spi(W_TX_PAYLOAD);
+
+            uint8_t cont=0;
+            do {
+                /* sent data from USART */
+                send_spi(USART_RX_RB());
+                ++cont;
+            } while ((USART_RX_lenkte_RB()>0)&&cont<32);
+
+
+            /* Set CSN High */
+            nRF_CEN_PORT|=(1<<nRF_CSN);
+
+            nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
+            _delay_ms(5);/* Moet blijkbaar min. 5ms Simon
+                           * waarom?
+                           **/
+        }
 
     }
     return 0;

@@ -274,7 +274,8 @@ uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal
     }
     static uint8_t ret[32];	//Array to be returned in the end
 
-    nRF_CEN_PORT &=~(1 <<nRF_CSN);          //Set CSN Low
+    /* Set CSN Low */
+    nRF_CEN_PORT &=~(1 <<nRF_CSN);
     asm ("nop");
     send_spi(reg);				//"reg" --> Set nRf to write or read mode
 

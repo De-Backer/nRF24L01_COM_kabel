@@ -32,12 +32,20 @@ extern "C"{
 // setup USART
 void setup_USART()
 {
+
+    RB_usart_RX_Start=0;
+    RB_usart_RX_Stop=0;
+    RB_usart_RX_lenkte=0;
+    RB_usart_TX_Start=0;
+    RB_usart_TX_Stop=0;
+    RB_usart_TX_lenkte=0;
+
     /*Set baud rate */
     UBRRH =(BAUD_PRESCALE>>8);
     UBRRL = BAUD_PRESCALE;
 
-    /*	Enable receiver and transmitter */
-    UCSRB = (1 << RXEN ) | (1 << TXEN ) ;
+    /*	Enable 'interrupt receiver' and transmitter and UDR BUFFER empty */
+    UCSRB = (1 << RXCIE ) | (1 << UDRIE ) | (1 << RXEN ) | (1 << TXEN ) ;
 
     UCSRC = (1 << URSEL ) | (1 << UCSZ0 ) | (1 << UCSZ1 ) ; // Use 8 - bit character sizes
 #ifdef debug_USART
@@ -47,11 +55,40 @@ void setup_USART()
 
 void transmit_USART(uint8_t data)
 {
-    /* Wait for empty BUFFER */
-    while(!(UCSRA & (1<<UDRE)))
-        ;
-    /* Put DATA into BUFFER */
-    UDR = data;
+    while(RB_usart_TX_lenkte>(RB_usart_masker-1))
+    {
+        /* wacht tot dat de buffer verkleind
+         * laat USART_UDRE_vect zijn werk doen
+         * maar kontroleer de UDR BUFFER
+         * */
+
+        cli();/*  */
+        if((UCSRA & (1<<UDRE)))
+        {
+            /* UDR BUFFER empty */
+            ++RB_usart_TX_Stop;
+            RB_usart_TX_Stop &= RB_usart_masker;
+            --RB_usart_TX_lenkte;
+
+            /* Put DATA into UDR BUFFER */
+            UDR = RB_usart_TX[RB_usart_TX_Stop];
+        }
+        sei();
+    }
+    ++RB_usart_TX_Start;
+    RB_usart_TX_Start &= RB_usart_masker;
+    ++RB_usart_TX_lenkte;
+    RB_usart_TX[RB_usart_TX_Start]=data;
+    if((UCSRA & (1<<UDRE))&(RB_usart_TX_lenkte<2))
+        /* if UDR BUFFER empty and no data in RB_usart_TX */
+    {
+        ++RB_usart_TX_Stop;
+        RB_usart_TX_Stop &= RB_usart_masker;
+        --RB_usart_TX_lenkte;
+
+        /* Put DATA into UDR BUFFER */
+        UDR = RB_usart_TX[RB_usart_TX_Stop];
+    }
 }
 
 void transmit_string_USART(char* data)
@@ -60,6 +97,47 @@ void transmit_string_USART(char* data)
     {
         transmit_USART(*data);
         data++;
+    }
+}
+
+uint8_t USART_RX_lenkte_RB()
+{
+    return RB_usart_RX_lenkte;
+}
+
+uint8_t USART_RX_RB()
+{
+    ++RB_usart_RX_Stop;
+    RB_usart_RX_Stop &= RB_usart_masker;
+    --RB_usart_RX_lenkte;
+    return RB_usart_RX[RB_usart_RX_Stop];
+}
+
+ISR(USART_RX_vect)
+{
+    if(RB_usart_RX_lenkte<RB_usart_masker)
+    {
+        ++RB_usart_RX_Start;
+        RB_usart_RX_Start &= RB_usart_masker;
+        ++RB_usart_RX_lenkte;
+        RB_usart_RX[RB_usart_RX_Start] = UDR;
+    } else {
+        /* groot probleem */
+    }
+}
+
+ISR(USART_UDRE_vect)
+{
+    if(RB_usart_TX_lenkte>0)
+    {
+        ++RB_usart_TX_Stop;
+        RB_usart_TX_Stop &= RB_usart_masker;
+        --RB_usart_TX_lenkte;
+
+        /* Put DATA into UDR BUFFER */
+        UDR = RB_usart_TX[RB_usart_TX_Stop];
+    } else {
+        /* geen data te verzenden */
     }
 }
 
