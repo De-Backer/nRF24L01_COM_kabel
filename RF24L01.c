@@ -84,6 +84,9 @@ void set_RF_channel_frequency(uint8_t frequency)
 
 void full_reset_RF24L01()
 {
+#ifdef debug_RF24L01
+    transmit_string_USART("\n full_reset_RF24L01");
+#endif
     if(nRF_CE_PORT&(1<<nRF_CE))
     {
         /* Set CE Low */

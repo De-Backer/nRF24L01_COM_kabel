@@ -29,10 +29,10 @@ extern "C"{
 
 #include "device.h"
 /*
- * 6+64+64byte = 134byte SRAM for de ring buffer
+ * 6+127+127byte = 260byte SRAM for de ring buffer
  * ander geen vars gemaakt
 */
-#define RB_usart_masker 0b00011111 /* 63byte masker */
+#define RB_usart_masker 0b00111111 /* 127byte masker */
 uint8_t RB_usart_RX_Start;
 uint8_t RB_usart_RX_Stop;
 uint8_t RB_usart_RX_lenkte;

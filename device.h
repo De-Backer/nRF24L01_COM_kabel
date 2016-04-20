@@ -93,7 +93,7 @@ extern "C"{
 #define nRF_IRQ_DDR  DDRB
 #define nRF_IRQ_Pin  PINB
 #define nRF_IRQ      3      // HIGH to LOW INT2 interrupt
-//#define nRF_IRQ_is_avr_interupt 1 // 1=yes 0=no
+#define nRF_IRQ_is_avr_interupt 1 // 1=yes 0=no
 
 /* SPI */
 #define nRF_SPI_PORT PORTB
@@ -105,7 +105,7 @@ extern "C"{
 #define SPI_DATA_REGISTER SPDR // SPI DATA REGISTER van de µc
 
 /* USART */
-#define USART_BAUDRATE 500000
+#define USART_BAUDRATE 500000 //115200 //500000
 #define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
 uint8_t *data;
 

@@ -135,9 +135,12 @@ int main(void)
      * NRF_CONFIG <-standaard op TX, Power Down, interrupts on
 */
 
-    /* start init RX or TX of nRF24L01 */
+    val[0]=0x0f;/* config voor ontvangen */
+    WriteToNrf(W,NRF_CONFIG,val,1);
+    _delay_us(1500);
+    /* staat nu in standby */
+    transmit_string_USART("\n staat nu in standby");
 
-    //TBA
 #if nRF_IRQ_is_avr_interupt
     /* setup interupt */
     GICR |=(1<<INT2);// External Interrupt Request 2 Enable
@@ -165,32 +168,64 @@ int main(void)
         }
 #endif
 
-        if(USART_RX_lenkte_RB()>5)
+        transmit_USART(nRF_CE_PORT);//01011100
+        if(nRF_CE_PORT&(1<<nRF_CE))
         {
-            /* data from USART */
+            transmit_string_USART("\n stop met zenden/ontvagen");
+            /* nRF_CE is al 5ms aan zonder interupt reset */
+            nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+        } else {
+            transmit_string_USART("\n niet aan get zenden of ontvangen");
+            /* niet aan get zenden of ontvangen */
+            if((USART_RX_lenkte_RB()>5))/* is er data te versturen? */
+            {
+                transmit_string_USART("\n data from USART");
+                /* data from USART */
 
-            /* Set CSN Low */
-            nRF_CEN_PORT &=~(1 <<nRF_CSN);
+                /* Set CSN Low */
+                nRF_CEN_PORT &=~(1 <<nRF_CSN);
 
-            asm ("nop");
+                asm ("nop");
 
-            send_spi(W_TX_PAYLOAD);
+                send_spi(W_TX_PAYLOAD);
 
-            uint8_t cont=0;
-            do {
-                /* sent data from USART */
-                send_spi(USART_RX_RB());
-                ++cont;
-            } while ((USART_RX_lenkte_RB()>0)&&cont<32);
+                uint8_t cont=0;
+                do {
+                    /* sent data from USART */
+                    send_spi(USART_RX_RB());
+                    ++cont;
+                } while ((USART_RX_lenkte_RB()>0)&&cont<32);
 
+                val[0]=0b00001110;/* config voor zenden */
+                WriteToNrf(W,NRF_CONFIG,val,1);
 
+                if(GetReg(NRF_CONFIG)&(1<<PRIM_RX)){
+                    transmit_string_USART("\n RX ");
+                } else {
+                    transmit_string_USART("\n TX ");
+                }
+            } else {
+                transmit_string_USART("\n zet in ontvangst modus");
+                /* zet in ontvangst modus */
+                val[0]=0x0f;/* config voor ontvangen */
+                WriteToNrf(W,NRF_CONFIG,val,1);
+            }
+            if(GetReg(NRF_CONFIG)&(1<<PRIM_RX)){
+                transmit_string_USART("\n RX ");
+            } else {
+                transmit_string_USART("\n TX ");
+            }
             /* Set CSN High */
             nRF_CEN_PORT|=(1<<nRF_CSN);
+            _delay_ms(5);/* Moet blijkbaar min. 5ms Simon
+                           * waarom?
+                           **/
 
             nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
             _delay_ms(5);/* Moet blijkbaar min. 5ms Simon
                            * waarom?
                            **/
+            transmit_USART(nRF_CE_PORT);//01011100
         }
 
     }
@@ -201,6 +236,7 @@ int main(void)
 
 ISR(INT2_vect)
 {
+    transmit_string_USART("\n nRF_IRQ_pin_triger");
     cli();
     nRF_IRQ_pin_triger();
     sei();

@@ -32,7 +32,6 @@ extern "C"{
 // setup USART
 void setup_USART()
 {
-
     RB_usart_RX_Start=0;
     RB_usart_RX_Stop=0;
     RB_usart_RX_lenkte=0;
@@ -123,6 +122,9 @@ ISR(USART_RX_vect)
         RB_usart_RX[RB_usart_RX_Start] = UDR;
     } else {
         /* groot probleem */
+#ifdef debug_USART
+        transmit_string_USART("\n groot probleem");
+#endif
     }
 }
 
