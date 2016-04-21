@@ -65,28 +65,18 @@ void transmit_USART(uint8_t data)
         if((UCSRA & (1<<UDRE)))
         {
             /* UDR BUFFER empty */
-            ++RB_usart_TX_Stop;
-            RB_usart_TX_Stop &= RB_usart_masker;
-            --RB_usart_TX_lenkte;
-
             /* Put DATA into UDR BUFFER */
-            UDR = RB_usart_TX[RB_usart_TX_Stop];
+            UDR = RB_TX_out();
         }
         sei();
     }
-    ++RB_usart_TX_Start;
-    RB_usart_TX_Start &= RB_usart_masker;
-    ++RB_usart_TX_lenkte;
-    RB_usart_TX[RB_usart_TX_Start]=data;
+    RB_RX_in(data);
+
     if((UCSRA & (1<<UDRE))&(RB_usart_TX_lenkte<2))
         /* if UDR BUFFER empty and no data in RB_usart_TX */
     {
-        ++RB_usart_TX_Stop;
-        RB_usart_TX_Stop &= RB_usart_masker;
-        --RB_usart_TX_lenkte;
-
         /* Put DATA into UDR BUFFER */
-        UDR = RB_usart_TX[RB_usart_TX_Stop];
+        UDR = RB_TX_out();
     }
 }
 
@@ -112,6 +102,22 @@ uint8_t USART_RX_RB()
     return RB_usart_RX[RB_usart_RX_Stop];
 }
 
+void RB_RX_in(uint8_t data)
+{
+    ++RB_usart_TX_Start;
+    RB_usart_TX_Start &= RB_usart_masker;
+    ++RB_usart_TX_lenkte;
+    RB_usart_TX[RB_usart_TX_Start]=data;
+}
+
+uint8_t RB_TX_out()
+{
+    ++RB_usart_TX_Stop;
+    RB_usart_TX_Stop &= RB_usart_masker;
+    --RB_usart_TX_lenkte;
+    return RB_usart_TX[RB_usart_TX_Stop];
+}
+
 ISR(USART_RX_vect)
 {
     if(RB_usart_RX_lenkte<RB_usart_masker)
@@ -132,12 +138,8 @@ ISR(USART_UDRE_vect)
 {
     if(RB_usart_TX_lenkte>0)
     {
-        ++RB_usart_TX_Stop;
-        RB_usart_TX_Stop &= RB_usart_masker;
-        --RB_usart_TX_lenkte;
-
         /* Put DATA into UDR BUFFER */
-        UDR = RB_usart_TX[RB_usart_TX_Stop];
+        UDR = RB_TX_out();
     } else {
         /* geen data te verzenden */
     }

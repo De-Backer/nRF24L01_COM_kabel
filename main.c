@@ -46,7 +46,7 @@ void init_IO()
 #endif
 
 #ifdef nRF_IRQ
-    nRF_IRQ_DDR  &= ~(1<<nRF_IRQ);
+    nRF_IRQ_DDR  &= ~(1<<nRF_IRQ);/* input */
 #endif
 
 #ifdef nRF_VDD
@@ -57,7 +57,7 @@ void init_IO()
     nRF_CEN_PORT |= (1<<nRF_CSN);
 
 #ifdef nRF_IRQ
-    nRF_IRQ_PORT |=(1<<nRF_IRQ);
+    nRF_IRQ_PORT |=(1<<nRF_IRQ);/* pul-up */
 #endif
 
 #ifdef IC_CONFIG
@@ -105,9 +105,9 @@ int main(void)
 */
 
     /* min. setup */
-    uint8_t val[32]={32,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    WriteToNrf(W,RX_PW_P0,val,1);/* Payload width to 32 */
-    WriteToNrf(W,RX_PW_P1,val,1);/* Payload width to 32 */
+    uint8_t val[32]={5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    WriteToNrf(W,RX_PW_P0,val,1);/* Payload width to 5 */
+    WriteToNrf(W,RX_PW_P1,val,1);/* Payload width to 5 */
 
     /*  Enhanced ShockBurst */
     val[0]=0x04;/* enabled Dynamic Payload Length */
@@ -139,20 +139,41 @@ int main(void)
     WriteToNrf(W,NRF_CONFIG,val,1);
     _delay_us(1500);
     /* staat nu in standby */
-    transmit_string_USART("\n staat nu in standby");
+    transmit_string_USART("\n standby");
 
 #if nRF_IRQ_is_avr_interupt
     /* setup interupt */
     GICR |=(1<<INT2);// External Interrupt Request 2 Enable
     GIFR |=(1<<INTF2);
 
+    transmit_string_USART(" test");
+    val[0]=0x0e;/* config voor ontvangen */
+    WriteToNrf(W,NRF_CONFIG,val,1);
+    _delay_us(1500);
+    /* test */
+    val[0]='s';
+    val[1]='i';
+    val[2]='m';
+    val[3]='o';
+    val[4]='n';
+    val[5]=' ';
+    WriteToNrf(R,FLUSH_TX,val,0);
+    WriteToNrf(R,W_TX_PAYLOAD,val,5);//Load Payload of length 5
+
+    nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
     sei();
+    _delay_ms(10);/* Moet blijkbaar min. 5ms Simon
+                   * waarom?
+                   **/
 #endif
 
 #if !nRF_IRQ_is_avr_interupt
         /* toestand pin nRF_IRQ */
     uint8_t nRF_IRQ_was=1;
 #endif
+
+
+
     for (;;)
     {
 #if !nRF_IRQ_is_avr_interupt
@@ -168,19 +189,54 @@ int main(void)
         }
 #endif
 
-        transmit_USART(nRF_CE_PORT);//01011100
+#ifdef debug_main
+        transmit_USART(0xff);//start
+        transmit_USART(0x01);//debug nr
+        transmit_USART(nRF_CE_PORT);//01011000
+#endif
+
         if(nRF_CE_PORT&(1<<nRF_CE))
         {
-            transmit_string_USART("\n stop met zenden/ontvagen");
+#ifdef debug_main
+            transmit_USART(0xff);//start
+            transmit_USART(0x02);//debug nr
+            transmit_USART(nRF_CE_PORT);//01011100
+#endif
+
             /* nRF_CE is al 5ms aan zonder interupt reset */
             nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+
+            /* reset status nRF24L01 */
+            /* Set CSN Low */
+            nRF_CEN_PORT &=~(1 <<nRF_CSN);
+
+            asm ("nop");
+
+            send_spi(W_REGISTER+NRF_STATUS);
+            send_spi(0x70);
+
+            /* Set CSN High */
+            nRF_CEN_PORT|=(1<<nRF_CSN);
+
+#ifdef debug_main
+            transmit_USART(0xff);//start
+            transmit_USART(0x03);//debug nr
+            transmit_USART(nRF_CE_PORT);//01011000
+#endif
         } else {
-            transmit_string_USART("\n niet aan get zenden of ontvangen");
+
+#ifdef debug_main
+            transmit_USART(0xff);//start
+            transmit_USART(0x04);//debug nr
+            transmit_USART(USART_RX_lenkte_RB());
+#endif
+
             /* niet aan get zenden of ontvangen */
+
             if((USART_RX_lenkte_RB()>5))/* is er data te versturen? */
             {
-                transmit_string_USART("\n data from USART");
                 /* data from USART */
+
 
                 /* Set CSN Low */
                 nRF_CEN_PORT &=~(1 <<nRF_CSN);
@@ -196,36 +252,48 @@ int main(void)
                     ++cont;
                 } while ((USART_RX_lenkte_RB()>0)&&cont<32);
 
+                /* Set CSN High */
+                nRF_CEN_PORT|=(1<<nRF_CSN);
+
+                asm ("nop");
+
                 val[0]=0b00001110;/* config voor zenden */
                 WriteToNrf(W,NRF_CONFIG,val,1);
 
-                if(GetReg(NRF_CONFIG)&(1<<PRIM_RX)){
-                    transmit_string_USART("\n RX ");
-                } else {
-                    transmit_string_USART("\n TX ");
-                }
+#ifdef debug_main
+                transmit_USART(0xff);//start
+                transmit_USART(0x05);//debug nr
+                transmit_USART(GetReg(NRF_CONFIG));
+#endif
+
             } else {
-                transmit_string_USART("\n zet in ontvangst modus");
+
+#ifdef debug_main
+                transmit_USART(0xff);//start
+                transmit_USART(0x06);//debug nr
+                transmit_USART(GetReg(NRF_CONFIG));//0xf
+#endif
+
                 /* zet in ontvangst modus */
                 val[0]=0x0f;/* config voor ontvangen */
                 WriteToNrf(W,NRF_CONFIG,val,1);
+
+#ifdef debug_main
+                transmit_USART(0xff);//start
+                transmit_USART(0x07);//debug nr
+                transmit_USART(GetReg(NRF_CONFIG));
+#endif
             }
-            if(GetReg(NRF_CONFIG)&(1<<PRIM_RX)){
-                transmit_string_USART("\n RX ");
-            } else {
-                transmit_string_USART("\n TX ");
-            }
-            /* Set CSN High */
-            nRF_CEN_PORT|=(1<<nRF_CSN);
-            _delay_ms(5);/* Moet blijkbaar min. 5ms Simon
-                           * waarom?
-                           **/
 
             nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
-            _delay_ms(5);/* Moet blijkbaar min. 5ms Simon
+            _delay_ms(10);/* Moet blijkbaar min. 5ms Simon
                            * waarom?
                            **/
-            transmit_USART(nRF_CE_PORT);//01011100
+#ifdef debug_main
+            transmit_USART(0xff);//start
+            transmit_USART(0x08);//debug nr
+            transmit_USART(nRF_CE_PORT);//0101 1100
+#endif
         }
 
     }
@@ -236,8 +304,8 @@ int main(void)
 
 ISR(INT2_vect)
 {
-    transmit_string_USART("\n nRF_IRQ_pin_triger");
     cli();
+    transmit_string_USART("\n nRF_IRQ");
     nRF_IRQ_pin_triger();
     sei();
 }

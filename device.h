@@ -34,9 +34,10 @@ extern "C"{
  * consider using the macros from <util/atomic.h>, rather than
  * implementing them manually with cli() and sei().
 */
-#define debug_SPI
-#define debug_USART
-#define debug_RF24L01
+#define debug_main
+//#define debug_SPI
+//#define debug_USART
+//#define debug_RF24L01
 
 /* clock */
 #define F_CPU 8000000UL  // 8 MHz
