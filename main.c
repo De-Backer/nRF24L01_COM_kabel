@@ -263,7 +263,7 @@ int main(void)
 #ifdef debug_main
                 transmit_USART(0xff);//start
                 transmit_USART(0x05);//debug nr
-                transmit_USART(GetReg(NRF_CONFIG));
+                transmit_USART(read_register(NRF_CONFIG));
 #endif
 
             } else {
@@ -271,7 +271,7 @@ int main(void)
 #ifdef debug_main
                 transmit_USART(0xff);//start
                 transmit_USART(0x06);//debug nr
-                transmit_USART(GetReg(NRF_CONFIG));//0xf
+                transmit_USART(read_register(NRF_CONFIG));//0xf
 #endif
 
                 /* zet in ontvangst modus */
@@ -281,7 +281,7 @@ int main(void)
 #ifdef debug_main
                 transmit_USART(0xff);//start
                 transmit_USART(0x07);//debug nr
-                transmit_USART(GetReg(NRF_CONFIG));
+                transmit_USART(read_register(NRF_CONFIG));
 #endif
             }
 

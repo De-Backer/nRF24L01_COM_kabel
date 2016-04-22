@@ -102,6 +102,8 @@ extern "C"{
 #define nRF_SCK  7      // SCK  <> SCK µc
 #define nRF_MOSI 5      // MOSI <> MOSI µc
 #define nRF_MISO 6      // MISO <> MISO µc
+#define Set_CSN_Low {nRF_CEN_PORT &=~(1 <<nRF_CSN);asm ("nop");} /* Set CSN Low */
+#define Set_CSN_High (nRF_CEN_PORT|=(1<<nRF_CSN)) /* Set CSN High */
 
 #define SPI_DATA_REGISTER SPDR // SPI DATA REGISTER van de µc
 

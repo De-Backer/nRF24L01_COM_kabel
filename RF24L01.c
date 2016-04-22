@@ -188,12 +188,12 @@ void nRF_IRQ_pin_triger()
 {
     nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
 
-    uint8_t info = GetReg(NRF_STATUS);/* waarom un interupt? */
+    uint8_t info = read_register(NRF_STATUS);/* waarom un interupt? */
     if(info&(1<<RX_DR))/* RX Data Ready */
     {
         /* lees data en clear bit RX_DR in NRF_STATUS */
         data[0]=32;
-        if(GetReg(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
+        if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
         {
             data=WriteToNrf(R,R_RX_PL_WID,data,1);
         }
@@ -204,16 +204,15 @@ void nRF_IRQ_pin_triger()
             /* data naar USART sturen */
             /* maak un funxie met data buffer TBA */
 
-            /* Set CSN Low */
-            nRF_CEN_PORT &=~(1<<nRF_CSN);
-            asm ("nop");
+            Set_CSN_Low;
+
             send_spi(R_RX_PAYLOAD);
             uint8_t var;
             for (var = 0; var < data[0]; ++var) {
                 transmit_USART(send_spi(NOP));
             }
-            /* Set CSN High */
-            nRF_CEN_PORT|=(1<<nRF_CSN);
+
+            Set_CSN_High;
 
         }
         data[0]=(1<<RX_DR);/* clear bit RX_DR in NRF_STATUS */
@@ -235,37 +234,44 @@ void nRF_IRQ_pin_triger()
 
 uint8_t Power_Down()
 {
-    /* Set CSN Low */
-    nRF_CEN_PORT &=~(1<<nRF_CSN);
+    Set_CSN_Low;
 
     uint8_t reg=0;
 
-    send_spi(R_REGISTER + NRF_CONFIG);
+    send_spi( R_REGISTER | (REGISTER_MASK & NRF_CONFIG));
 
     reg = send_spi(NOP);
 
     reg &= ~(1<<PWR_UP);
 
-    send_spi(W_REGISTER + NRF_CONFIG);
+    send_spi( W_REGISTER | (REGISTER_MASK & NRF_CONFIG));
 
     reg=send_spi(reg);
 
-    /* Set CSN High */
-    nRF_CEN_PORT|=(1<<nRF_CSN);
+    Set_CSN_High;
     /* Return NRF_CONFIG */
     return reg;
 }
 
-uint8_t GetReg(uint8_t reg)
+uint8_t read_register(uint8_t reg)
 {
-    /* Set CSN Low */
-    nRF_CEN_PORT &=~(1<<nRF_CSN);
-    asm ("nop");
-    send_spi(R_REGISTER + reg);	//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
+    Set_CSN_Low;
+
+    send_spi(R_REGISTER | (REGISTER_MASK & reg));	//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
     reg = send_spi(NOP);		//Send DUMMY BYTE[NOP] to receive first byte in 'reg' register
-    /* Set CSN High */
-    nRF_CEN_PORT|=(1<<nRF_CSN);
+
+    Set_CSN_High;
     return reg;							//Return the registry read
+}
+
+void write_register(uint8_t reg, uint8_t value)
+{
+    Set_CSN_Low;
+
+    send_spi( W_REGISTER |( REGISTER_MASK & reg ) );
+    send_spi( value );
+
+    Set_CSN_High;
 }
 
 uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal)
@@ -277,9 +283,7 @@ uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal
     }
     static uint8_t ret[32];	//Array to be returned in the end
 
-    /* Set CSN Low */
-    nRF_CEN_PORT &=~(1 <<nRF_CSN);
-    asm ("nop");
+    Set_CSN_Low;
     send_spi(reg);				//"reg" --> Set nRf to write or read mode
 
     uint8_t i=0;
@@ -296,7 +300,9 @@ uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal
             send_spi(val[i]);			//Send command one at a time
         }
     }
-    nRF_CEN_PORT|=(1<<nRF_CSN);		//nRf into IDLE with CSN HIGH
+
+    Set_CSN_High;
+
     return ret;					//Return the data read
 }
 
