@@ -94,6 +94,7 @@ void full_reset_RF24L01()
         /* Standby-1 or Power Down */
     }
     /* Set CSN Low */
+    _delay_us(10);
     nRF_CEN_PORT &=~(1 <<nRF_CSN);
 
     asm ("nop");
@@ -101,27 +102,51 @@ void full_reset_RF24L01()
     /* Configuration Register */
     send_spi(W_REGISTER+NRF_CONFIG);
     send_spi(0x08);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Enable ‘Auto Acknowledgment’ */
     send_spi(W_REGISTER+EN_AA);
     send_spi(0x3f);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Enabled RX Addresses */
     send_spi(W_REGISTER+EN_RXADDR);
-    send_spi(0x03);
+    send_spi(0x01);//0x03
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Address Widths */
     send_spi(W_REGISTER+SETUP_AW);
     send_spi(0x03);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Setup of Automatic Retransmission */
     send_spi(W_REGISTER+SETUP_RETR);
-    send_spi(0x03);
+    send_spi(0xff);//Rest value 0x3 is te kort
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* RF Channel */
     send_spi(W_REGISTER+RF_CH);
     send_spi(0x02);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* RF Setup Register */
     send_spi(W_REGISTER+RF_SETUP);
     send_spi(0x0f);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Status Register */
     send_spi(W_REGISTER+NRF_STATUS);
     send_spi(0x7e);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Receive address data pipe 0 */
     send_spi(W_REGISTER+RX_ADDR_P0);
     send_spi(0xe7);
@@ -129,6 +154,9 @@ void full_reset_RF24L01()
     send_spi(0xe7);
     send_spi(0xe7);
     send_spi(0xe7);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Receive address data pipe 1 */
     send_spi(W_REGISTER+RX_ADDR_P1);
     send_spi(0xc2);
@@ -136,18 +164,33 @@ void full_reset_RF24L01()
     send_spi(0xc2);
     send_spi(0xc2);
     send_spi(0xc2);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Receive address data pipe 2 */
     send_spi(W_REGISTER+RX_ADDR_P2);
     send_spi(0xc3);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Receive address data pipe 3 */
     send_spi(W_REGISTER+RX_ADDR_P3);
     send_spi(0xc4);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Receive address data pipe 4 */
     send_spi(W_REGISTER+RX_ADDR_P4);
     send_spi(0xc5);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Receive address data pipe 5 */
     send_spi(W_REGISTER+RX_ADDR_P5);
     send_spi(0xc6);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Transmit address */
     send_spi(W_REGISTER+TX_ADDR);
     send_spi(0xe7);
@@ -155,33 +198,119 @@ void full_reset_RF24L01()
     send_spi(0xe7);
     send_spi(0xe7);
     send_spi(0xe7);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Number of bytes in RX payload in data pipe 0 */
     send_spi(W_REGISTER+RX_PW_P0);
     send_spi(0x00);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Number of bytes in RX payload in data pipe 1 */
     send_spi(W_REGISTER+RX_PW_P1);
     send_spi(0x00);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Number of bytes in RX payload in data pipe 2 */
     send_spi(W_REGISTER+RX_PW_P2);
     send_spi(0x00);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Number of bytes in RX payload in data pipe 3 */
     send_spi(W_REGISTER+RX_PW_P3);
     send_spi(0x00);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Number of bytes in RX payload in data pipe 4 */
     send_spi(W_REGISTER+RX_PW_P4);
     send_spi(0x00);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Number of bytes in RX payload in data pipe 5 */
     send_spi(W_REGISTER+RX_PW_P5);
     send_spi(0x00);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Enable dynamic payload length */
     send_spi(W_REGISTER+DYNPD);
     send_spi(0x00);
+    Set_CSN_High;
+    _delay_us(10);
+    Set_CSN_Low;
     /* Feature Register */
     send_spi(W_REGISTER+FEATURE);
     send_spi(0x00);
 
     /* Set CSN High */
     nRF_CEN_PORT|=(1<<nRF_CSN);
+}
+
+void full_read_registers()
+{
+    transmit_USART(read_register(NRF_CONFIG));
+    transmit_USART(read_register(EN_AA));
+    transmit_USART(read_register(EN_RXADDR));
+    transmit_USART(read_register(SETUP_AW));
+    transmit_USART(read_register(SETUP_RETR));
+    transmit_USART(read_register(RF_CH));
+    transmit_USART(read_register(RF_SETUP));
+    transmit_USART(read_register(NRF_STATUS));
+    transmit_USART(read_register(OBSERVE_TX));
+    transmit_USART(read_register(RPD));
+
+    Set_CSN_Low;
+    transmit_USART(0xff);
+    transmit_USART(0x0a);
+    send_spi( R_REGISTER | (REGISTER_MASK & RX_ADDR_P0));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    Set_CSN_High;
+
+    Set_CSN_Low;
+    transmit_USART(0xff);
+    transmit_USART(0x0b);
+    send_spi( R_REGISTER | (REGISTER_MASK & RX_ADDR_P1));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    Set_CSN_High;
+
+    transmit_USART(read_register(RX_ADDR_P2));
+    transmit_USART(read_register(RX_ADDR_P3));
+    transmit_USART(read_register(RX_ADDR_P4));
+    transmit_USART(read_register(RX_ADDR_P5));
+
+    Set_CSN_Low;
+    transmit_USART(0xff);
+    transmit_USART(0x10);
+    send_spi( R_REGISTER | (REGISTER_MASK & TX_ADDR));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    transmit_USART(send_spi(NOP));
+    Set_CSN_High;
+
+    transmit_USART(read_register(RX_PW_P0));
+    transmit_USART(read_register(RX_PW_P1));
+    transmit_USART(read_register(RX_PW_P2));
+    transmit_USART(read_register(RX_PW_P3));
+    transmit_USART(read_register(RX_PW_P4));
+    transmit_USART(read_register(RX_PW_P5));
+    transmit_USART(read_register(FIFO_STATUS));
+    transmit_USART(read_register(DYNPD));
+    transmit_USART(read_register(FEATURE));
 }
 
 void nRF_IRQ_pin_triger()
@@ -256,6 +385,8 @@ uint8_t Power_Down()
 uint8_t read_register(uint8_t reg)
 {
     Set_CSN_Low;
+    transmit_USART(0xff);
+    transmit_USART(reg);
 
     send_spi(R_REGISTER | (REGISTER_MASK & reg));	//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
     reg = send_spi(NOP);		//Send DUMMY BYTE[NOP] to receive first byte in 'reg' register

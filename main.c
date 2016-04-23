@@ -45,6 +45,10 @@ void init_IO()
     IC_CONFIG_DDR &= ~(1<<IC_CONFIG);
 #endif
 
+#ifdef IC_master
+    IC_master_DDR &= ~(1<<IC_master);/* zender */
+#endif
+
 #ifdef nRF_IRQ
     nRF_IRQ_DDR  &= ~(1<<nRF_IRQ);/* input */
 #endif
@@ -61,8 +65,13 @@ void init_IO()
 #endif
 
 #ifdef IC_CONFIG
-    IC_CONFIG_PORT |=(1<<IC_CONFIG);
+    IC_CONFIG_PORT |=(1<<IC_CONFIG);/* pul-up */
 #endif
+
+#ifdef IC_master
+    IC_master_PORT |=(1<<IC_master);/* pul-up */
+#endif
+
 }
 int main(void)
 {
@@ -77,7 +86,9 @@ int main(void)
     /* nRF24L01 Power Down Mode */
 #ifndef nRF_VDD
     /* no Reset Values! => full setup nRF24L01 */
+    full_read_registers();
     full_reset_RF24L01();
+    full_read_registers();
 #endif
     /* setup nRF24L01
      *
@@ -105,17 +116,17 @@ int main(void)
 */
 
     /* min. setup */
-    uint8_t val[32]={5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    WriteToNrf(W,RX_PW_P0,val,1);/* Payload width to 5 */
-    WriteToNrf(W,RX_PW_P1,val,1);/* Payload width to 5 */
+    uint8_t val[32]={cont_payload_bytes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    WriteToNrf(W,RX_PW_P0,val,1);/* Payload width to cont_payload_bytes */
+    WriteToNrf(W,RX_PW_P1,val,1);/* Payload width to cont_payload_bytes */
 
     /*  Enhanced ShockBurst */
-    val[0]=0x04;/* enabled Dynamic Payload Length */
-    WriteToNrf(W,FEATURE,val,1);
-    val[0]=0x03;/* enabled Dynamic Payload Length */
-    WriteToNrf(W,DYNPD,val,1);
+    //val[0]=0x04;/* enabled Dynamic Payload Length */
+    //WriteToNrf(W,FEATURE,val,1);
+    //[0]=0x03;/* enabled Dynamic Payload Length */
+    //WriteToNrf(W,DYNPD,val,1);
     /*Enable ‘Auto Acknowledgment’ => full_reset_RF24L01(); is standaard */
-    val[0]=0x1f;/* Setup of Automatic Retransmission */
+    val[0]=0xff;/* Setup of Automatic Retransmission */
     WriteToNrf(W,SETUP_RETR,val,1);
     /* RX
      * option RX:
@@ -135,36 +146,31 @@ int main(void)
      * NRF_CONFIG <-standaard op TX, Power Down, interrupts on
 */
 
+#ifdef IC_master
+    if(IC_master_Pin&(1<<IC_master)){
+        /* zender */
+        val[0]=0x0e;/* config voor zender */
+    } else {
+        /* ontvanger */
+        val[0]=0x0f;/* config voor ontvangen */
+    }
+#else
+    /* ontvanger */
     val[0]=0x0f;/* config voor ontvangen */
+#endif
     WriteToNrf(W,NRF_CONFIG,val,1);
     _delay_us(1500);
     /* staat nu in standby */
-    transmit_string_USART("\n standby");
+    //transmit_string_USART("\n standby");
 
 #if nRF_IRQ_is_avr_interupt
     /* setup interupt */
     GICR |=(1<<INT2);// External Interrupt Request 2 Enable
     GIFR |=(1<<INTF2);
 
-    transmit_string_USART(" test");
-    val[0]=0x0e;/* config voor ontvangen */
-    WriteToNrf(W,NRF_CONFIG,val,1);
-    _delay_us(1500);
-    /* test */
-    val[0]='s';
-    val[1]='i';
-    val[2]='m';
-    val[3]='o';
-    val[4]='n';
-    val[5]=' ';
-    WriteToNrf(R,FLUSH_TX,val,0);
-    WriteToNrf(R,W_TX_PAYLOAD,val,5);//Load Payload of length 5
-
-    nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
     sei();
-    _delay_ms(10);/* Moet blijkbaar min. 5ms Simon
-                   * waarom?
-                   **/
+    full_read_registers();
+
 #endif
 
 #if !nRF_IRQ_is_avr_interupt
@@ -206,6 +212,10 @@ int main(void)
             /* nRF_CE is al 5ms aan zonder interupt reset */
             nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
 
+            _delay_us(20);
+            //full_read_registers();
+            _delay_us(20);
+
             /* reset status nRF24L01 */
             /* Set CSN Low */
             nRF_CEN_PORT &=~(1 <<nRF_CSN);
@@ -217,6 +227,10 @@ int main(void)
 
             /* Set CSN High */
             nRF_CEN_PORT|=(1<<nRF_CSN);
+
+            _delay_us(20);
+            //full_read_registers();
+            _delay_us(20);
 
 #ifdef debug_main
             transmit_USART(0xff);//start
@@ -233,7 +247,7 @@ int main(void)
 
             /* niet aan get zenden of ontvangen */
 
-            if((USART_RX_lenkte_RB()>5))/* is er data te versturen? */
+            if((USART_RX_lenkte_RB()>cont_payload_bytes))/* is er data te versturen? */
             {
                 /* data from USART */
 
@@ -249,8 +263,10 @@ int main(void)
                 do {
                     /* sent data from USART */
                     send_spi(USART_RX_RB());
+                    transmit_USART(cont);
                     ++cont;
-                } while ((USART_RX_lenkte_RB()>0)&&cont<32);
+
+                } while ((USART_RX_lenkte_RB()>0)&&cont<cont_payload_bytes);
 
                 /* Set CSN High */
                 nRF_CEN_PORT|=(1<<nRF_CSN);
@@ -274,9 +290,22 @@ int main(void)
                 transmit_USART(read_register(NRF_CONFIG));//0xf
 #endif
 
+#ifdef IC_master
+                if(IC_master_Pin&(1<<IC_master)){
+                    /* zender */
+
+                } else {
+                    /* ontvanger */
+                    /* zet in ontvangst modus */
+                    val[0]=0x0f;/* config voor ontvangen */
+                    WriteToNrf(W,NRF_CONFIG,val,1);
+                }
+#else
+    /* ontvanger */
                 /* zet in ontvangst modus */
                 val[0]=0x0f;/* config voor ontvangen */
                 WriteToNrf(W,NRF_CONFIG,val,1);
+#endif
 
 #ifdef debug_main
                 transmit_USART(0xff);//start

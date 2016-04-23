@@ -34,9 +34,9 @@ extern "C"{
  * consider using the macros from <util/atomic.h>, rather than
  * implementing them manually with cli() and sei().
 */
-#define debug_main
+//#define debug_main
 //#define debug_SPI
-//#define debug_USART
+#define debug_USART
 //#define debug_RF24L01
 
 /* clock */
@@ -54,12 +54,19 @@ extern "C"{
  * */
 
 /* IO */
+/* zender */
+#define IC_master_PORT PORTD
+#define IC_master_DDR  DDRD
+#define IC_master_Pin  PIND
+#define IC_master  2
+
 
 /* IC_CONFIG for setup RF24L01 on USART and USART_BAUDRATE, oder
  * TBA...
  * */
 #define IC_CONFIG_PORT PORTB
 #define IC_CONFIG_DDR  DDRB
+#define IC_CONFIG_Pin  PINB
 //#define IC_CONFIG  0
 
 #define nRF_VDD_PORT PORTB
@@ -111,6 +118,8 @@ extern "C"{
 #define USART_BAUDRATE 500000 //115200 //500000
 #define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
 uint8_t *data;
+
+#define cont_payload_bytes 5
 
 #ifdef __cplusplus
 } // extern "C"

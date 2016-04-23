@@ -54,6 +54,12 @@ void setup_USART()
 
 void transmit_USART(uint8_t data)
 {
+    while(!(UCSRA & (1<<UDRE)))
+        ;
+    UDR = data;
+    return ;
+    //test
+
     while(RB_usart_TX_lenkte>(RB_usart_masker-1))
     {
         /* wacht tot dat de buffer verkleind
@@ -102,7 +108,7 @@ uint8_t USART_RX_RB()
     return RB_usart_RX[RB_usart_RX_Stop];
 }
 
-void RB_RX_in(uint8_t data)
+void RB_TX_in(uint8_t data)
 {
     ++RB_usart_TX_Start;
     RB_usart_TX_Start &= RB_usart_masker;
@@ -126,6 +132,9 @@ ISR(USART_RX_vect)
         RB_usart_RX_Start &= RB_usart_masker;
         ++RB_usart_RX_lenkte;
         RB_usart_RX[RB_usart_RX_Start] = UDR;
+
+        transmit_USART(USART_RX_lenkte_RB());
+
     } else {
         /* groot probleem */
 #ifdef debug_USART
@@ -136,6 +145,8 @@ ISR(USART_RX_vect)
 
 ISR(USART_UDRE_vect)
 {
+    return ;
+    //test
     if(RB_usart_TX_lenkte>0)
     {
         /* Put DATA into UDR BUFFER */
