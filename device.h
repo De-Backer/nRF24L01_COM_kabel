@@ -119,7 +119,7 @@ extern "C"{
 #define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
 uint8_t *data;
 
-#define cont_payload_bytes 5
+#define cont_payload_bytes 32
 
 #ifdef __cplusplus
 } // extern "C"

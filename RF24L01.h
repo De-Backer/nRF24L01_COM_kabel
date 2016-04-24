@@ -52,7 +52,7 @@ void start_up_RF24L01();
 void shutdown_RF24L01();
 void set_RF_channel_frequency(uint8_t frequency);
 void full_reset_RF24L01();
-void full_read_registers();
+void full_read_registers(uint8_t debug_nr);
 void nRF_IRQ_pin_triger();
 uint8_t Power_Down();
 uint8_t read_register(uint8_t reg);

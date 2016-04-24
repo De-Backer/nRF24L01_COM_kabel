@@ -67,14 +67,12 @@ void transmit_USART(uint8_t data)
          * maar kontroleer de UDR BUFFER
          * */
 
-        cli();/*  */
         if((UCSRA & (1<<UDRE)))
         {
             /* UDR BUFFER empty */
             /* Put DATA into UDR BUFFER */
             UDR = RB_TX_out();
         }
-        sei();
     }
     RB_RX_in(data);
 
@@ -132,9 +130,6 @@ ISR(USART_RX_vect)
         RB_usart_RX_Start &= RB_usart_masker;
         ++RB_usart_RX_lenkte;
         RB_usart_RX[RB_usart_RX_Start] = UDR;
-
-        transmit_USART(USART_RX_lenkte_RB());
-
     } else {
         /* groot probleem */
 #ifdef debug_USART

@@ -251,8 +251,21 @@ void full_reset_RF24L01()
     nRF_CEN_PORT|=(1<<nRF_CSN);
 }
 
-void full_read_registers()
+void full_read_registers(uint8_t debug_nr)
 {
+    /* zent 10 keer 0xff data is maar 5 bytes */
+    transmit_USART(0xff);
+    transmit_USART(0xff);
+    transmit_USART(0xff);
+    transmit_USART(0xff);
+    transmit_USART(0xff);
+    transmit_USART(0xff);
+    transmit_USART(0xff);
+    transmit_USART(0xff);
+    transmit_USART(0xff);
+    transmit_USART(0xff);
+    /* debug nr (lockasie) */
+    transmit_USART(debug_nr);
     transmit_USART(read_register(NRF_CONFIG));
     transmit_USART(read_register(EN_AA));
     transmit_USART(read_register(EN_RXADDR));

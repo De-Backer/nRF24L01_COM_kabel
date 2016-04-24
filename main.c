@@ -86,9 +86,9 @@ int main(void)
     /* nRF24L01 Power Down Mode */
 #ifndef nRF_VDD
     /* no Reset Values! => full setup nRF24L01 */
-    full_read_registers();
+    full_read_registers(0);
     full_reset_RF24L01();
-    full_read_registers();
+    full_read_registers(1);
 #endif
     /* setup nRF24L01
      *
@@ -116,9 +116,7 @@ int main(void)
 */
 
     /* min. setup */
-    uint8_t val[32]={cont_payload_bytes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    WriteToNrf(W,RX_PW_P0,val,1);/* Payload width to cont_payload_bytes */
-    WriteToNrf(W,RX_PW_P1,val,1);/* Payload width to cont_payload_bytes */
+    write_register(RX_PW_P0,cont_payload_bytes);
 
     /*  Enhanced ShockBurst */
     //val[0]=0x04;/* enabled Dynamic Payload Length */
@@ -126,8 +124,7 @@ int main(void)
     //[0]=0x03;/* enabled Dynamic Payload Length */
     //WriteToNrf(W,DYNPD,val,1);
     /*Enable ‘Auto Acknowledgment’ => full_reset_RF24L01(); is standaard */
-    val[0]=0xff;/* Setup of Automatic Retransmission */
-    WriteToNrf(W,SETUP_RETR,val,1);
+    write_register(SETUP_RETR,0x2f);
     /* RX
      * option RX:
      *
@@ -149,16 +146,15 @@ int main(void)
 #ifdef IC_master
     if(IC_master_Pin&(1<<IC_master)){
         /* zender */
-        val[0]=0x0e;/* config voor zender */
+        write_register(NRF_CONFIG,0x4e);
     } else {
         /* ontvanger */
-        val[0]=0x0f;/* config voor ontvangen */
+        write_register(NRF_CONFIG,0x3f);
     }
 #else
     /* ontvanger */
-    val[0]=0x0f;/* config voor ontvangen */
+    write_register(NRF_CONFIG,0x3f);
 #endif
-    WriteToNrf(W,NRF_CONFIG,val,1);
     _delay_us(1500);
     /* staat nu in standby */
     //transmit_string_USART("\n standby");
@@ -169,7 +165,7 @@ int main(void)
     GIFR |=(1<<INTF2);
 
     sei();
-    full_read_registers();
+    full_read_registers(2);
 
 #endif
 
@@ -195,55 +191,23 @@ int main(void)
         }
 #endif
 
-#ifdef debug_main
-        transmit_USART(0xff);//start
-        transmit_USART(0x01);//debug nr
-        transmit_USART(nRF_CE_PORT);//01011000
-#endif
 
         if(nRF_CE_PORT&(1<<nRF_CE))
         {
-#ifdef debug_main
-            transmit_USART(0xff);//start
-            transmit_USART(0x02);//debug nr
-            transmit_USART(nRF_CE_PORT);//01011100
-#endif
 
             /* nRF_CE is al 5ms aan zonder interupt reset */
             nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
 
-            _delay_us(20);
-            //full_read_registers();
-            _delay_us(20);
-
             /* reset status nRF24L01 */
-            /* Set CSN Low */
-            nRF_CEN_PORT &=~(1 <<nRF_CSN);
-
-            asm ("nop");
+            Set_CSN_Low
 
             send_spi(W_REGISTER+NRF_STATUS);
             send_spi(0x70);
 
-            /* Set CSN High */
-            nRF_CEN_PORT|=(1<<nRF_CSN);
+            Set_CSN_High;
 
-            _delay_us(20);
-            //full_read_registers();
-            _delay_us(20);
-
-#ifdef debug_main
-            transmit_USART(0xff);//start
-            transmit_USART(0x03);//debug nr
-            transmit_USART(nRF_CE_PORT);//01011000
-#endif
         } else {
 
-#ifdef debug_main
-            transmit_USART(0xff);//start
-            transmit_USART(0x04);//debug nr
-            transmit_USART(USART_RX_lenkte_RB());
-#endif
 
             /* niet aan get zenden of ontvangen */
 
@@ -251,11 +215,7 @@ int main(void)
             {
                 /* data from USART */
 
-
-                /* Set CSN Low */
-                nRF_CEN_PORT &=~(1 <<nRF_CSN);
-
-                asm ("nop");
+                Set_CSN_Low
 
                 send_spi(W_TX_PAYLOAD);
 
@@ -263,32 +223,19 @@ int main(void)
                 do {
                     /* sent data from USART */
                     send_spi(USART_RX_RB());
-                    transmit_USART(cont);
                     ++cont;
 
                 } while ((USART_RX_lenkte_RB()>0)&&cont<cont_payload_bytes);
 
-                /* Set CSN High */
-                nRF_CEN_PORT|=(1<<nRF_CSN);
+                Set_CSN_High;
 
                 asm ("nop");
 
-                val[0]=0b00001110;/* config voor zenden */
-                WriteToNrf(W,NRF_CONFIG,val,1);
-
-#ifdef debug_main
-                transmit_USART(0xff);//start
-                transmit_USART(0x05);//debug nr
-                transmit_USART(read_register(NRF_CONFIG));
-#endif
+                /* config voor zenden */
+                write_register(NRF_CONFIG,0x4e);
 
             } else {
 
-#ifdef debug_main
-                transmit_USART(0xff);//start
-                transmit_USART(0x06);//debug nr
-                transmit_USART(read_register(NRF_CONFIG));//0xf
-#endif
 
 #ifdef IC_master
                 if(IC_master_Pin&(1<<IC_master)){
@@ -297,32 +244,19 @@ int main(void)
                 } else {
                     /* ontvanger */
                     /* zet in ontvangst modus */
-                    val[0]=0x0f;/* config voor ontvangen */
-                    WriteToNrf(W,NRF_CONFIG,val,1);
+                    write_register(NRF_CONFIG,0x3f);
                 }
 #else
     /* ontvanger */
                 /* zet in ontvangst modus */
-                val[0]=0x0f;/* config voor ontvangen */
-                WriteToNrf(W,NRF_CONFIG,val,1);
-#endif
-
-#ifdef debug_main
-                transmit_USART(0xff);//start
-                transmit_USART(0x07);//debug nr
-                transmit_USART(read_register(NRF_CONFIG));
+                write_register(NRF_CONFIG,0x3f);
 #endif
             }
 
             nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
-            _delay_ms(10);/* Moet blijkbaar min. 5ms Simon
+            _delay_ms(5);/* Moet blijkbaar min. 5ms Simon
                            * waarom?
                            **/
-#ifdef debug_main
-            transmit_USART(0xff);//start
-            transmit_USART(0x08);//debug nr
-            transmit_USART(nRF_CE_PORT);//0101 1100
-#endif
         }
 
     }
@@ -333,10 +267,8 @@ int main(void)
 
 ISR(INT2_vect)
 {
-    cli();
     transmit_string_USART("\n nRF_IRQ");
     nRF_IRQ_pin_triger();
-    sei();
 }
 #endif
 
