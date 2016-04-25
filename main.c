@@ -267,6 +267,7 @@ int main(void)
 
 ISR(INT2_vect)
 {
+    /* interupt time is ...? */
     transmit_string_USART("\n nRF_IRQ");
     nRF_IRQ_pin_triger();
 }

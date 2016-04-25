@@ -87,7 +87,7 @@ extern "C"{
  */
 #define nRF_CE_PORT PORTB
 #define nRF_CE_DDR  DDRB
-#define nRF_CE   2      /* CE info
+#define nRF_CE   3      /* CE info
  * is used when to either send the data (transmitter) or start receive data (receiver)
  * ON-HIGH
  * Timing infomation:
@@ -100,7 +100,7 @@ extern "C"{
 #define nRF_IRQ_PORT PORTB
 #define nRF_IRQ_DDR  DDRB
 #define nRF_IRQ_Pin  PINB
-#define nRF_IRQ      3      // HIGH to LOW INT2 interrupt
+#define nRF_IRQ      2      // HIGH to LOW INT2 interrupt
 #define nRF_IRQ_is_avr_interupt 1 // 1=yes 0=no
 
 /* SPI */
