@@ -54,6 +54,12 @@ extern "C"{
  * */
 
 /* IO */
+/* debug pinen
+ * te verwijderen na korekt werking
+*/
+#define debug_PORT PORTC
+#define debug_DDR  DDRC
+
 /* zender */
 #define IC_master_PORT PORTD
 #define IC_master_DDR  DDRD
@@ -101,7 +107,7 @@ extern "C"{
 #define nRF_IRQ_DDR  DDRB
 #define nRF_IRQ_Pin  PINB
 #define nRF_IRQ      2      // HIGH to LOW INT2 interrupt
-#define nRF_IRQ_is_avr_interupt 1 // 1=yes 0=no
+#define nRF_IRQ_is_avr_interupt 0 // 1=yes 0=no
 
 /* SPI */
 #define nRF_SPI_PORT PORTB

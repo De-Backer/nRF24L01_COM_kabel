@@ -41,6 +41,8 @@ void init_IO()
     nRF_CE_DDR   |= (1<<nRF_CE) ;
     nRF_CEN_DDR  |= (1<<nRF_CSN);
 
+    debug_DDR=0xff;
+
 #ifdef IC_CONFIG
     IC_CONFIG_DDR &= ~(1<<IC_CONFIG);
 #endif
@@ -72,6 +74,7 @@ void init_IO()
     IC_master_PORT |=(1<<IC_master);/* pul-up */
 #endif
 
+    debug_PORT=0xff;
 }
 int main(void)
 {
@@ -162,6 +165,7 @@ int main(void)
 #if nRF_IRQ_is_avr_interupt
     /* setup interupt */
     GICR |=(1<<INT2);// External Interrupt Request 2 Enable
+    MCUCSR &=(~(1<<ISC2));
     GIFR |=(1<<INTF2);
 
     sei();
@@ -182,8 +186,10 @@ int main(void)
         /* poll pin nRF_IRQ */
         if((nRF_IRQ_Pin&(~(1<<nRF_IRQ)))&nRF_IRQ_was)/* hoog naar laag */
         {
+            debug_PORT=0x00;
             nRF_IRQ_was=0;
             nRF_IRQ_pin_triger();
+            debug_PORT=0xff;
         }
         if((nRF_IRQ_Pin&(1<<nRF_IRQ))&(nRF_IRQ_was==0))/* laag naar hoog */
         {
@@ -267,9 +273,14 @@ int main(void)
 
 ISR(INT2_vect)
 {
+    //debug_PORT&=~(1<<0x01); /* interupt read */
+    debug_PORT=0x00; /* interupt read */
+
     /* interupt time is ...? */
     transmit_string_USART("\n nRF_IRQ");
     nRF_IRQ_pin_triger();
+    debug_PORT=0xff;
+    //debug_PORT|=(1<<0x01);
 }
 #endif
 

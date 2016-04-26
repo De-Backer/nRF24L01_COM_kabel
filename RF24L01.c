@@ -73,7 +73,7 @@ void set_RF_channel_frequency(uint8_t frequency)
 
     asm ("nop");
 
-    send_spi(W_REGISTER+RF_CH);
+    send_spi( W_REGISTER | ( REGISTER_MASK & RF_CH ) );
 
     /* set_RF_channel */
     send_spi(frequency&0x7f);
@@ -105,7 +105,7 @@ void full_reset_RF24L01()
 
     Set_CSN_Low;
     /* Receive address data pipe 0 */
-    send_spi(W_REGISTER+RX_ADDR_P0);
+    send_spi( W_REGISTER | ( REGISTER_MASK & RX_ADDR_P0 ) );
     send_spi(0xe7);
     send_spi(0xe7);
     send_spi(0xe7);
@@ -115,7 +115,7 @@ void full_reset_RF24L01()
 
     Set_CSN_Low;
     /* Receive address data pipe 1 */
-    send_spi(W_REGISTER+RX_ADDR_P1);
+    send_spi( W_REGISTER | ( REGISTER_MASK & RX_ADDR_P1 ) );
     send_spi(0xc2);
     send_spi(0xc2);
     send_spi(0xc2);
@@ -130,7 +130,7 @@ void full_reset_RF24L01()
 
     Set_CSN_Low;
     /* Transmit address */
-    send_spi(W_REGISTER+TX_ADDR);
+    send_spi( W_REGISTER | ( REGISTER_MASK & TX_ADDR ) );
     send_spi(0xe7);
     send_spi(0xe7);
     send_spi(0xe7);
@@ -175,8 +175,6 @@ void full_read_registers(uint8_t debug_nr)
     transmit_USART(read_register(RPD));
 
     Set_CSN_Low;
-    transmit_USART(0xff);
-    transmit_USART(0x0a);
     send_spi( R_REGISTER | (REGISTER_MASK & RX_ADDR_P0));
     transmit_USART(send_spi(NOP));
     transmit_USART(send_spi(NOP));
@@ -186,8 +184,6 @@ void full_read_registers(uint8_t debug_nr)
     Set_CSN_High;
 
     Set_CSN_Low;
-    transmit_USART(0xff);
-    transmit_USART(0x0b);
     send_spi( R_REGISTER | (REGISTER_MASK & RX_ADDR_P1));
     transmit_USART(send_spi(NOP));
     transmit_USART(send_spi(NOP));
@@ -202,8 +198,6 @@ void full_read_registers(uint8_t debug_nr)
     transmit_USART(read_register(RX_ADDR_P5));
 
     Set_CSN_Low;
-    transmit_USART(0xff);
-    transmit_USART(0x10);
     send_spi( R_REGISTER | (REGISTER_MASK & TX_ADDR));
     transmit_USART(send_spi(NOP));
     transmit_USART(send_spi(NOP));
@@ -295,10 +289,8 @@ uint8_t Power_Down()
 uint8_t read_register(uint8_t reg)
 {
     Set_CSN_Low;
-    transmit_USART(0xff);
-    transmit_USART(reg);
 
-    send_spi(R_REGISTER | (REGISTER_MASK & reg));	//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
+    send_spi( R_REGISTER | ( REGISTER_MASK & reg ) );	//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
     reg = send_spi(NOP);		//Send DUMMY BYTE[NOP] to receive first byte in 'reg' register
 
     Set_CSN_High;
@@ -309,7 +301,7 @@ void write_register(uint8_t reg, uint8_t value)
 {
     Set_CSN_Low;
 
-    send_spi( W_REGISTER |( REGISTER_MASK & reg ) );
+    send_spi( W_REGISTER | ( REGISTER_MASK & reg ) );
     send_spi( value );
 
     Set_CSN_High;
@@ -320,7 +312,8 @@ uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal
     //ReadWrite --> "R" or "W", reg --> 'register', *val --> array with package, antVal --> number of int in array
     if(ReadWrite == W)//If it is in READMODE, then addr is already 0x00
     {
-        reg = W_REGISTER + reg;
+        reg = (W_REGISTER | ( REGISTER_MASK & reg ));
+        //reg = W_REGISTER + reg; //=> fukt up
     }
     static uint8_t ret[32];	//Array to be returned in the end
 
