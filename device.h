@@ -103,11 +103,11 @@ extern "C"{
  *
  */
 /* interupt */
-#define nRF_IRQ_PORT PORTB
-#define nRF_IRQ_DDR  DDRB
-#define nRF_IRQ_Pin  PINB
-#define nRF_IRQ      2      // HIGH to LOW INT2 interrupt
-#define nRF_IRQ_is_avr_interupt 0 // 1=yes 0=no
+#define nRF_IRQ_PORT PORTD //PORTB
+#define nRF_IRQ_DDR  DDRD  //DDRB
+#define nRF_IRQ_Pin  PIND  //PINB
+#define nRF_IRQ      3     //2      // HIGH to LOW INT2 interrupt
+#define nRF_IRQ_is_avr_interupt 1 // 1=yes 0=no
 
 /* SPI */
 #define nRF_SPI_PORT PORTB

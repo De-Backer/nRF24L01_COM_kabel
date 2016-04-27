@@ -94,11 +94,21 @@ void full_reset_RF24L01()
         /* Standby-1 or Power Down */
         _delay_ms(10);
     }
+    /* FLUSH TX FIFO */
+    Set_CSN_Low;
+    send_spi(FLUSH_TX);
+    Set_CSN_High;
+
+    /* FLUSH RX FIFO */
+    Set_CSN_Low;
+    send_spi(FLUSH_RX);
+    Set_CSN_High;
+
     write_register(NRF_CONFIG,0x08);/* Configuration Register */
     write_register(EN_AA,0x3f);/* Enable ‘Auto Acknowledgment’ */
     write_register(EN_RXADDR,0x01);/* Enabled RX Addresses */
     write_register(SETUP_AW,0x03);/* Address Widths */
-    write_register(SETUP_RETR,0xff);/* Setup of Automatic Retransmission */
+    write_register(SETUP_RETR,0x2f);/* Setup of Automatic Retransmission */
     write_register(RF_CH,0x02);/* RF Channel */
     write_register(RF_SETUP,0x0f);/* RF Setup Register */
     write_register(NRF_STATUS,0x7e);/* Status Register */
@@ -170,7 +180,9 @@ void full_read_registers(uint8_t debug_nr)
     transmit_USART(read_register(SETUP_RETR));
     transmit_USART(read_register(RF_CH));
     transmit_USART(read_register(RF_SETUP));
-    transmit_USART(read_register(NRF_STATUS));
+    /* test */
+    transmit_USART(read_status());
+    //transmit_USART(read_register(NRF_STATUS));
     transmit_USART(read_register(OBSERVE_TX));
     transmit_USART(read_register(RPD));
 
@@ -221,7 +233,7 @@ void nRF_IRQ_pin_triger()
 {
     nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
 
-    uint8_t info = read_register(NRF_STATUS);/* waarom un interupt? */
+    uint8_t info = read_status();/* waarom un interupt? */
     if(info&(1<<RX_DR))/* RX Data Ready */
     {
         /* lees data en clear bit RX_DR in NRF_STATUS */
@@ -263,6 +275,20 @@ void nRF_IRQ_pin_triger()
         data[0]=(1<<MAX_RT);/* clear bit MAX_RT in NRF_STATUS */
         WriteToNrf(W,NRF_STATUS,data,1);
     }
+    if(!(read_register(FIFO_STATUS)&(1<<TX_EMPTY)))
+    {
+        /* if not empty */
+        /* set as Transmiter */
+        write_register(NRF_CONFIG,0x4e);
+
+        /* start Transmitting */
+        nRF_CE_PORT|=(1<<nRF_CE);
+    } /* else in standby */
+    if(read_register(NRF_CONFIG)&(1<<PRIM_RX))
+    {
+        /* start ontvanger */
+        nRF_CE_PORT|=(1<<nRF_CE);
+    }
 }
 
 uint8_t Power_Down()
@@ -283,6 +309,17 @@ uint8_t Power_Down()
 
     Set_CSN_High;
     /* Return NRF_CONFIG */
+    return reg;
+}
+
+/* leest de status byte
+ * is de eerst byte bij spi com na Set_CSN_Low
+*/
+uint8_t read_status()
+{
+    Set_CSN_Low;
+    uint8_t reg = send_spi(NOP);
+    Set_CSN_High;
     return reg;
 }
 

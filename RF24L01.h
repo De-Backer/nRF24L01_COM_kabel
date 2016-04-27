@@ -55,6 +55,7 @@ void full_reset_RF24L01();
 void full_read_registers(uint8_t debug_nr);
 void nRF_IRQ_pin_triger();
 uint8_t Power_Down();
+uint8_t read_status();/* zie fuxie met opm. */
 uint8_t read_register(uint8_t reg);
 void write_register(uint8_t reg, uint8_t value);
 uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal);

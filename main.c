@@ -164,9 +164,12 @@ int main(void)
 
 #if nRF_IRQ_is_avr_interupt
     /* setup interupt */
-    GICR |=(1<<INT2);// External Interrupt Request 2 Enable
-    MCUCSR &=(~(1<<ISC2));
-    GIFR |=(1<<INTF2);
+    MCUCR |=(1<<ISC11);//The falling edge of INT1 generates an interrupt request.
+    GICR |=(1<<INT1);// External Interrupt Request 2 Enable
+
+    //GICR |=(1<<INT2);// External Interrupt Request 2 Enable
+    //MCUCSR &=(~(1<<ISC2));
+    //GIFR |=(1<<INTF2);
 
     sei();
     full_read_registers(2);
@@ -207,10 +210,12 @@ int main(void)
             /* reset status nRF24L01 */
             Set_CSN_Low
 
-            send_spi(W_REGISTER+NRF_STATUS);
+            send_spi(W_REGISTER| ( REGISTER_MASK & NRF_STATUS ) );
             send_spi(0x70);
 
             Set_CSN_High;
+
+            read_register(FIFO_STATUS);
 
         } else {
 
@@ -250,6 +255,7 @@ int main(void)
                 } else {
                     /* ontvanger */
                     /* zet in ontvangst modus */
+                    /* als er data is word dit gewist => aan te passen */
                     write_register(NRF_CONFIG,0x3f);
                 }
 #else
@@ -271,16 +277,13 @@ int main(void)
 
 #if nRF_IRQ_is_avr_interupt
 
-ISR(INT2_vect)
+ISR(INT1_vect)
 {
-    //debug_PORT&=~(1<<0x01); /* interupt read */
-    debug_PORT=0x00; /* interupt read */
-
-    /* interupt time is ...? */
-    transmit_string_USART("\n nRF_IRQ");
+    /* interupt read */
+    //debug_PORT&=0xfe;
+    /* interupt time is 9µs */
     nRF_IRQ_pin_triger();
-    debug_PORT=0xff;
-    //debug_PORT|=(1<<0x01);
+    //debug_PORT|=0x01;
 }
 #endif
 
