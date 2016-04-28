@@ -40,7 +40,7 @@ extern "C"{
 //#define debug_RF24L01
 
 /* clock */
-#define F_CPU 8000000UL  // 8 MHz
+#define F_CPU 14745600UL //8000000UL  // 8 MHz
 
 /* nRF24L01 pin
  *  ____________________________________
@@ -115,13 +115,14 @@ extern "C"{
 #define nRF_SCK  7      // SCK  <> SCK µc
 #define nRF_MOSI 5      // MOSI <> MOSI µc
 #define nRF_MISO 6      // MISO <> MISO µc
-#define Set_CSN_Low {nRF_CEN_PORT &=~(1 <<nRF_CSN);asm ("nop");} /* Set CSN Low */
-#define Set_CSN_High (nRF_CEN_PORT|=(1<<nRF_CSN)) /* Set CSN High */
+//#define Set_CSN_Low {nRF_CEN_PORT &=~(1 <<nRF_CSN);asm ("nop");} /* Set CSN Low */
+#define Set_CSN_Low {nRF_CEN_PORT &=~(1 <<nRF_CSN);} /* Set CSN Low */
+#define Set_CSN_High (nRF_CEN_PORT|=(1 <<nRF_CSN)) /* Set CSN High */
 
 #define SPI_DATA_REGISTER SPDR // SPI DATA REGISTER van de µc
 
 /* USART */
-#define USART_BAUDRATE 500000 //115200 //500000
+#define USART_BAUDRATE 115200 //115200 //500000
 #define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
 uint8_t *data;
 

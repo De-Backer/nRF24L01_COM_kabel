@@ -35,9 +35,6 @@ void setup_USART()
     RB_usart_RX_Start=0;
     RB_usart_RX_Stop=0;
     RB_usart_RX_lenkte=0;
-    RB_usart_TX_Start=0;
-    RB_usart_TX_Stop=0;
-    RB_usart_TX_lenkte=0;
 
     /*Set baud rate */
     UBRRH =(BAUD_PRESCALE>>8);
@@ -58,30 +55,6 @@ void transmit_USART(uint8_t data)
         ;
     UDR = data;
     return ;
-    //test
-
-    while(RB_usart_TX_lenkte>(RB_usart_masker-1))
-    {
-        /* wacht tot dat de buffer verkleind
-         * laat USART_UDRE_vect zijn werk doen
-         * maar kontroleer de UDR BUFFER
-         * */
-
-        if((UCSRA & (1<<UDRE)))
-        {
-            /* UDR BUFFER empty */
-            /* Put DATA into UDR BUFFER */
-            UDR = RB_TX_out();
-        }
-    }
-    RB_RX_in(data);
-
-    if((UCSRA & (1<<UDRE))&(RB_usart_TX_lenkte<2))
-        /* if UDR BUFFER empty and no data in RB_usart_TX */
-    {
-        /* Put DATA into UDR BUFFER */
-        UDR = RB_TX_out();
-    }
 }
 
 void transmit_string_USART(char* data)
@@ -106,22 +79,6 @@ uint8_t USART_RX_RB()
     return RB_usart_RX[RB_usart_RX_Stop];
 }
 
-void RB_TX_in(uint8_t data)
-{
-    ++RB_usart_TX_Start;
-    RB_usart_TX_Start &= RB_usart_masker;
-    ++RB_usart_TX_lenkte;
-    RB_usart_TX[RB_usart_TX_Start]=data;
-}
-
-uint8_t RB_TX_out()
-{
-    ++RB_usart_TX_Stop;
-    RB_usart_TX_Stop &= RB_usart_masker;
-    --RB_usart_TX_lenkte;
-    return RB_usart_TX[RB_usart_TX_Stop];
-}
-
 ISR(USART_RX_vect)
 {
     if(RB_usart_RX_lenkte<RB_usart_masker)
@@ -141,14 +98,6 @@ ISR(USART_RX_vect)
 ISR(USART_UDRE_vect)
 {
     return ;
-    //test
-    if(RB_usart_TX_lenkte>0)
-    {
-        /* Put DATA into UDR BUFFER */
-        UDR = RB_TX_out();
-    } else {
-        /* geen data te verzenden */
-    }
 }
 
 #ifdef __cplusplus
