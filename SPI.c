@@ -45,7 +45,8 @@ void setup_spi()
     transmit_string_USART("Registers ");
 #endif
     //for atmega8535 @ 8MHz
-    SPCR|=(1<<SPE)|(1<<MSTR)|(1<<SPI2X);
+    SPCR|=(1<<SPE)|(1<<MSTR);
+    //SPSR|=(1<<SPI2X);
 #ifdef debug_SPI
     transmit_string_USART("ok");
 #endif

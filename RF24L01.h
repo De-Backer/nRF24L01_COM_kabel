@@ -54,6 +54,7 @@ void set_RF_channel_frequency(uint8_t frequency);
 void full_reset_RF24L01();
 void full_read_registers(uint8_t debug_nr);
 void nRF_IRQ_pin_triger();
+void ping_RF24L01();/* is alles ok? */
 uint8_t Power_Down();
 uint8_t read_status();/* zie fuxie met opm. */
 uint8_t read_register(uint8_t reg);

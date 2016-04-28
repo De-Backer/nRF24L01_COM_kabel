@@ -200,22 +200,19 @@ int main(void)
         }
 #endif
 
-
         if(nRF_CE_PORT&(1<<nRF_CE))
         {
 
             /* nRF_CE is al 5ms aan zonder interupt reset */
-            nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+            /* kontroleer de status */
+            if(IC_master_Pin&(1<<IC_master)){
+                /* zender */
 
-            /* reset status nRF24L01 */
-            Set_CSN_Low
+            } else {
+                ping_RF24L01();
+                _delay_ms(1);/* is iets kalmer */
+            }
 
-            send_spi(W_REGISTER| ( REGISTER_MASK & NRF_STATUS ) );
-            send_spi(0x70);
-
-            Set_CSN_High;
-
-            read_register(FIFO_STATUS);
 
         } else {
 
@@ -244,6 +241,7 @@ int main(void)
 
                 /* config voor zenden */
                 write_register(NRF_CONFIG,0x4e);
+                nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
 
             } else {
 
@@ -257,18 +255,15 @@ int main(void)
                     /* zet in ontvangst modus */
                     /* als er data is word dit gewist => aan te passen */
                     write_register(NRF_CONFIG,0x3f);
+                    nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
                 }
 #else
     /* ontvanger */
                 /* zet in ontvangst modus */
                 write_register(NRF_CONFIG,0x3f);
+                nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
 #endif
             }
-
-            nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
-            _delay_ms(5);/* Moet blijkbaar min. 5ms Simon
-                           * waarom?
-                           **/
         }
 
     }

@@ -69,9 +69,7 @@ void set_RF_channel_frequency(uint8_t frequency)
     /* resolution = 1MHz */
 
     /* Set CSN Low */
-    nRF_CEN_PORT &=~(1 <<nRF_CSN);
-
-    asm ("nop");
+    Set_CSN_Low;
 
     send_spi( W_REGISTER | ( REGISTER_MASK & RF_CH ) );
 
@@ -79,7 +77,7 @@ void set_RF_channel_frequency(uint8_t frequency)
     send_spi(frequency&0x7f);
 
     /* Set CSN High */
-    nRF_CEN_PORT|=(1<<nRF_CSN);
+    Set_CSN_High;
 }
 
 void full_reset_RF24L01()
@@ -231,20 +229,32 @@ void full_read_registers(uint8_t debug_nr)
 
 void nRF_IRQ_pin_triger()
 {
-    nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+    /* waarom un interupt? */
+    ping_RF24L01();
+}
 
-    uint8_t info = read_status();/* waarom un interupt? */
-    if(info&(1<<RX_DR))/* RX Data Ready */
+void ping_RF24L01()
+{
+    /* polling of nRF24L01 */
+    uint8_t info = read_status();
+    if(info&(1<<RX_DR))/* RX Data Ready (is er data => lees data uit) */
     {
+
+        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+
         /* lees data en clear bit RX_DR in NRF_STATUS */
-        data[0]=32;
+        data[0]=cont_payload_bytes;
         if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
         {
-            data=WriteToNrf(R,R_RX_PL_WID,data,1);
+            data[0]=read_register(R_RX_PL_WID);
         }
         if(data[0]>32)/* flush RX FIFO */
         {
-            WriteToNrf(W,FLUSH_RX,data,1);
+            Set_CSN_Low;
+
+            send_spi(FLUSH_RX);
+
+            Set_CSN_High;
         } else {
             /* data naar USART sturen */
             /* maak un funxie met data buffer TBA */
@@ -260,32 +270,52 @@ void nRF_IRQ_pin_triger()
             Set_CSN_High;
 
         }
-        data[0]=(1<<RX_DR);/* clear bit RX_DR in NRF_STATUS */
-        WriteToNrf(W,NRF_STATUS,data,1);
+        write_register(NRF_STATUS,(1<<RX_DR));/* clear bit RX_DR in NRF_STATUS */
     }
-    if(info&(1<<TX_DS))/* Data sent */
+
+    if(info&(1<<TX_DS))/* Data sent (de zender geeft data succesvol verzonden)*/
     {
+        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+
         /* clear bit TX_DS in NRF_STATUS en reset pin nRF_CE */
-        data[0]=(1<<TX_DS);/* clear bit TX_DS in NRF_STATUS */
-        WriteToNrf(W,NRF_STATUS,data,1);
+        write_register(NRF_STATUS,(1<<TX_DS));/* clear bit TX_DS in NRF_STATUS */
+        /* is er nog data? */
+
     }
-    if(info&(1<<MAX_RT))/* Comm fail */
+
+    if(info&(1<<MAX_RT))/* Comm fail (geen ontvankst bevesteging van de ontvanger)*/
     {
+
+        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+
+        /* tba: afhandelen van Comm fail */
+
         /* clear bit MAX_RT in NRF_STATUS */
-        data[0]=(1<<MAX_RT);/* clear bit MAX_RT in NRF_STATUS */
-        WriteToNrf(W,NRF_STATUS,data,1);
+        write_register(NRF_STATUS,(1<<MAX_RT));/* clear bit MAX_RT in NRF_STATUS */
     }
-    if(!(read_register(FIFO_STATUS)&(1<<TX_EMPTY)))
+
+    if(!((1<<TX_EMPTY)&read_register(FIFO_STATUS)))
     {
         /* if not empty */
-        /* set as Transmiter */
-        write_register(NRF_CONFIG,0x4e);
+        /* is not Transmiter */
+        if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
+        {
+            /* set as Transmiter */
+            write_register(NRF_CONFIG,0x4e);
+        }
 
         /* start Transmitting */
         nRF_CE_PORT|=(1<<nRF_CE);
-    } /* else in standby */
-    if(read_register(NRF_CONFIG)&(1<<PRIM_RX))
+    } else {
+        /* else in standby */
+        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+    }
+
+    if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
     {
+        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+        asm ("nop");
+        asm ("nop");
         /* start ontvanger */
         nRF_CE_PORT|=(1<<nRF_CE);
     }
@@ -327,7 +357,7 @@ uint8_t read_register(uint8_t reg)
 {
     Set_CSN_Low;
 
-    send_spi( R_REGISTER | ( REGISTER_MASK & reg ) );	//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
+    send_spi( REGISTER_MASK & reg );	//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
     reg = send_spi(NOP);		//Send DUMMY BYTE[NOP] to receive first byte in 'reg' register
 
     Set_CSN_High;
