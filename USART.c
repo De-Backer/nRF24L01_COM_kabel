@@ -74,17 +74,26 @@ uint8_t USART_RX_lenkte_RB()
 uint8_t USART_RX_RB()
 {
     ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
     RB_usart_RX_Stop &= RB_usart_masker;
+#endif
     --RB_usart_RX_lenkte;
     return RB_usart_RX[RB_usart_RX_Stop];
 }
 
 ISR(USART_RX_vect)
 {
+
+#ifdef RB_usart_masker
     if(RB_usart_RX_lenkte<RB_usart_masker)
+#else
+    if(RB_usart_RX_lenkte<255)
+#endif
     {
         ++RB_usart_RX_Start;
+#ifdef RB_usart_masker
         RB_usart_RX_Start &= RB_usart_masker;
+#endif
         ++RB_usart_RX_lenkte;
         RB_usart_RX[RB_usart_RX_Start] = UDR;
     } else {

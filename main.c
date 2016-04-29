@@ -225,19 +225,261 @@ int main(void)
 
                 Set_CSN_Low
 
-                send_spi(W_TX_PAYLOAD);
+                //send_spi(W_TX_PAYLOAD);
 
-                uint8_t cont=0;
-                do {
+
+                SPI_DATA_REGISTER=W_TX_PAYLOAD;
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//01
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//02
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//03
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//04
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//05
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//06
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//07
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//08
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//09
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//10
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//11
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//12
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//13
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//14
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//15
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//16
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//17
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//18
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//19
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//20
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//21
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//22
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//23
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//24
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//25
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//26
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//27
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//28
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//29
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//30
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//31
+                ++RB_usart_RX_Stop;
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker;
+#endif
+                    --RB_usart_RX_lenkte;
+                while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//32
+                while (!SPI_WAIT);
+
+                //uint8_t cont=0;
+                //do {
                     /* sent data from USART */
-                    send_spi(USART_RX_RB());
-                    ++cont;
 
-                } while ((USART_RX_lenkte_RB()>0)&&cont<cont_payload_bytes);
+                    /* dit werkt te traag 43 µs zonder verzending  kan naar 1µs gebracht worden */
+//                    send_spi(USART_RX_RB());
+
+                    /* 31 µs zonder verzending */
+                    /* ATmel: Tip #10 – Unrolling loops 23µs */
+//                    ++RB_usart_RX_Stop;
+//#ifdef RB_usart_masker
+//                    RB_usart_RX_Stop &= RB_usart_masker;
+//#endif
+//                    --RB_usart_RX_lenkte;
+//                    send_spi(RB_usart_RX[RB_usart_RX_Stop]);
+//
+//                    ++cont;
+//
+//                } while (cont<cont_payload_bytes);
+//                } while ((USART_RX_lenkte_RB()>0)&&cont<cont_payload_bytes);
 
                 Set_CSN_High;
 
                 asm ("nop");
+
 
                 /* config voor zenden */
                 write_register(NRF_CONFIG,0x4e);
