@@ -230,6 +230,7 @@ void full_read_registers(uint8_t debug_nr)
 void nRF_IRQ_pin_triger()
 {
     /* waarom un interupt? */
+    Set_CSN_High;/* reset spi com */
     ping_RF24L01();
 }
 
