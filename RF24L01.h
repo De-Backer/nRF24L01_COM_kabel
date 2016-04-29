@@ -37,8 +37,6 @@ extern "C"{
  *
  * => 36byte aan vars
 */
-#define W 1
-#define R 0
 
 #include "device.h"
 #include "SPI.h"
@@ -59,7 +57,6 @@ uint8_t Power_Down();
 uint8_t read_status();/* zie fuxie met opm. */
 uint8_t read_register(uint8_t reg);
 void write_register(uint8_t reg, uint8_t value);
-uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal);
 
 
 #ifdef __cplusplus

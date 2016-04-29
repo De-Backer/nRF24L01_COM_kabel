@@ -237,23 +237,30 @@ void nRF_IRQ_pin_triger()
 void ping_RF24L01()
 {
     /* polling of nRF24L01 */
-    uint8_t info = read_status();
+    Set_CSN_Low;
+    SPI_DATA_REGISTER = NOP;
+    uint8_t info;
+    do {} while (!SPI_WAIT);
+    info = SPI_DATA_REGISTER;
+    Set_CSN_High;
+
     if(info&(1<<RX_DR))/* RX Data Ready (is er data => lees data uit) */
     {
 
         nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
 
         /* lees data en clear bit RX_DR in NRF_STATUS */
-        data[0]=cont_payload_bytes;
+        uint8_t var=cont_payload_bytes;
         if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
         {
-            data[0]=read_register(R_RX_PL_WID);
+            var=read_register(R_RX_PL_WID);
         }
         if(data[0]>32)/* flush RX FIFO */
         {
             Set_CSN_Low;
 
-            send_spi(FLUSH_RX);
+            SPI_DATA_REGISTER = FLUSH_RX;
+            do {} while (!SPI_WAIT);
 
             Set_CSN_High;
         } else {
@@ -262,11 +269,14 @@ void ping_RF24L01()
 
             Set_CSN_Low;
 
-            send_spi(R_RX_PAYLOAD);
-            uint8_t var;
-            for (var = 0; var < data[0]; ++var) {
-                transmit_USART(send_spi(NOP));
-            }
+            SPI_DATA_REGISTER = R_RX_PAYLOAD;
+            do {} while (!SPI_WAIT);
+            do {
+                SPI_DATA_REGISTER = NOP;
+                do {} while (!SPI_WAIT);
+                do {} while (!(UCSRA & (1<<UDRE)));
+                UDR = SPI_DATA_REGISTER;
+            } while (--var);
 
             Set_CSN_High;
 
@@ -373,39 +383,6 @@ void write_register(uint8_t reg, uint8_t value)
     send_spi( value );
 
     Set_CSN_High;
-}
-
-uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal)
-{
-    //ReadWrite --> "R" or "W", reg --> 'register', *val --> array with package, antVal --> number of int in array
-    if(ReadWrite == W)//If it is in READMODE, then addr is already 0x00
-    {
-        reg = (W_REGISTER | ( REGISTER_MASK & reg ));
-        //reg = W_REGISTER + reg; //=> fukt up
-    }
-    static uint8_t ret[32];	//Array to be returned in the end
-
-    Set_CSN_Low;
-    send_spi(reg);				//"reg" --> Set nRf to write or read mode
-
-    uint8_t i=0;
-    for(; i<antVal; i++)
-    {
-        if(ReadWrite == R && reg != W_TX_PAYLOAD)
-        {
-            //READ A REGISTRY
-            ret[i] = send_spi(NOP);		//Send dummy Byte to read data
-        }
-        else
-        {
-            //Write to nRF
-            send_spi(val[i]);			//Send command one at a time
-        }
-    }
-
-    Set_CSN_High;
-
-    return ret;					//Return the data read
 }
 
 #ifdef __cplusplus

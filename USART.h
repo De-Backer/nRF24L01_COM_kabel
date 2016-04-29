@@ -33,8 +33,8 @@ extern "C"{
  * ander geen vars gemaakt
 */
 //#define RB_usart_masker 0b11111111 /* 127byte masker */
-uint8_t RB_usart_RX_Start;
-uint8_t RB_usart_RX_Stop;
+uint8_t *RB_usart_RX_Start;
+uint8_t *RB_usart_RX_Stop;
 uint8_t RB_usart_RX_lenkte;
 #ifdef RB_usart_masker
 uint8_t RB_usart_RX[RB_usart_masker+1];
@@ -47,13 +47,6 @@ void setup_USART();
 
 void transmit_USART(uint8_t data);
 void transmit_string_USART(char* data);
-
-uint8_t USART_RX_lenkte_RB();
-uint8_t USART_RX_RB();
-void RB_RX_in(uint8_t data);
-
-uint8_t RB_TX_out();
-void RB_TX_in(uint8_t data);
 
 ISR(USART_RX_vect);
 ISR(USART_UDRE_vect);

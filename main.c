@@ -219,7 +219,7 @@ int main(void)
 
             /* niet aan get zenden of ontvangen */
 
-            if((USART_RX_lenkte_RB()>cont_payload_bytes))/* is er data te versturen? */
+            if(RB_usart_RX_lenkte>cont_payload_bytes)/* is er data te versturen? */
             {
                 /* data from USART */
 
@@ -229,231 +229,18 @@ int main(void)
 
 
                 SPI_DATA_REGISTER=W_TX_PAYLOAD;
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
+                uint8_t condition=cont_payload_bytes;
+                do {
+                    ++RB_usart_RX_Stop;
+    #ifdef RB_usart_masker
+                        RB_usart_RX_Stop &= RB_usart_masker;
+    #endif
                     --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//01
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//02
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//03
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//04
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//05
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//06
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//07
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//08
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//09
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//10
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//11
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//12
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//13
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//14
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//15
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//16
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//17
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//18
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//19
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//20
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//21
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//22
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//23
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//24
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//25
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//26
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//27
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//28
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//29
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//30
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//31
-                ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-                    --RB_usart_RX_lenkte;
-                while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];//32
-                while (!SPI_WAIT);
+                    do {} while (!SPI_WAIT);
+                    SPI_DATA_REGISTER=*RB_usart_RX_Stop;
+                    //SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];
+                } while (--condition);
+                do {} while (!SPI_WAIT);
 
                 //uint8_t cont=0;
                 //do {
@@ -516,11 +303,129 @@ int main(void)
 
 ISR(INT1_vect)
 {
-    /* interupt read */
-    //debug_PORT&=0xfe;
-    /* interupt time is 9µs */
-    nRF_IRQ_pin_triger();
-    //debug_PORT|=0x01;
+    PORTC=0xff;
+    /* waarom un interupt? */
+    Set_CSN_High;/* reset spi com */
+
+    /* polling of nRF24L01 */
+    Set_CSN_Low;
+    SPI_DATA_REGISTER = NOP;
+    uint8_t info;
+    do {} while (!SPI_WAIT);
+    info = SPI_DATA_REGISTER;
+    Set_CSN_High;
+
+    if(info&(1<<RX_DR))/* RX Data Ready (is er data => lees data uit) */
+    {
+
+        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+
+        /* lees data en clear bit RX_DR in NRF_STATUS */
+        uint8_t var=cont_payload_bytes;
+        if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
+        {
+            var=read_register(R_RX_PL_WID);
+        }
+        if(var>32)/* flush RX FIFO */
+        {
+            Set_CSN_Low;
+
+            SPI_DATA_REGISTER = FLUSH_RX;
+            do {} while (!SPI_WAIT);
+
+            Set_CSN_High;
+        } else {
+            /* data naar USART sturen */
+            /* maak un funxie met data buffer TBA */
+
+            Set_CSN_Low;
+
+            SPI_DATA_REGISTER = R_RX_PAYLOAD;
+            do {} while (!SPI_WAIT);
+            do {
+                SPI_DATA_REGISTER = NOP;
+                do {} while (!SPI_WAIT);
+                do {} while (!(UCSRA & (1<<UDRE)));
+                UDR = SPI_DATA_REGISTER;
+            } while (--var);
+
+            Set_CSN_High;
+
+        }
+        /* clear bit RX_DR in NRF_STATUS */
+        Set_CSN_Low;
+        SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_STATUS ) );
+        do {} while (!SPI_WAIT);
+        SPI_DATA_REGISTER = (1<<RX_DR);
+        do {} while (!SPI_WAIT);
+        Set_CSN_High;
+    }
+
+    if(info&(1<<TX_DS))/* Data sent (de zender geeft data succesvol verzonden)*/
+    {
+        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+
+        /* clear bit TX_DS in NRF_STATUS en reset pin nRF_CE */
+
+        /* clear bit TX_DS in NRF_STATUS */
+        Set_CSN_Low;
+        SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_STATUS ) );
+        do {} while (!SPI_WAIT);
+        SPI_DATA_REGISTER = (1<<TX_DS);
+        do {} while (!SPI_WAIT);
+        Set_CSN_High;
+        /* is er nog data? */
+
+    }
+
+    if(info&(1<<MAX_RT))/* Comm fail (geen ontvankst bevesteging van de ontvanger)*/
+    {
+
+        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+
+        /* tba: afhandelen van Comm fail */
+
+        /* clear bit MAX_RT in NRF_STATUS */
+        Set_CSN_Low;
+        SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_STATUS ) );
+        do {} while (!SPI_WAIT);
+        SPI_DATA_REGISTER = (1<<MAX_RT);
+        do {} while (!SPI_WAIT);
+        Set_CSN_High;
+    }
+
+    if(!((1<<TX_EMPTY)&read_register(FIFO_STATUS)))
+    {
+        /* if not empty */
+        /* is not Transmiter */
+        if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
+        {
+            /* set as Transmiter */
+            Set_CSN_Low;
+            SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_CONFIG ) );
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER = 0x4e;
+            do {} while (!SPI_WAIT);
+            Set_CSN_High;
+        }
+
+        /* start Transmitting */
+        nRF_CE_PORT|=(1<<nRF_CE);
+    } else {
+        /* else in standby */
+        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+    }
+
+    if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
+    {
+        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+        asm ("nop");
+        asm ("nop");
+        /* start ontvanger */
+        nRF_CE_PORT|=(1<<nRF_CE);
+    }
+    PORTC=0x00;
+
 }
 #endif
 

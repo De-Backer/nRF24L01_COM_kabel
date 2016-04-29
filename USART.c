@@ -32,8 +32,8 @@ extern "C"{
 // setup USART
 void setup_USART()
 {
-    RB_usart_RX_Start=0;
-    RB_usart_RX_Stop=0;
+    RB_usart_RX_Start=RB_usart_RX;
+    RB_usart_RX_Stop=RB_usart_RX;
     RB_usart_RX_lenkte=0;
 
     /*Set baud rate */
@@ -41,7 +41,7 @@ void setup_USART()
     UBRRL = BAUD_PRESCALE;
 
     /*	Enable 'interrupt receiver' and transmitter and UDR BUFFER empty */
-    UCSRB = (1 << RXCIE ) | (1 << UDRIE ) | (1 << RXEN ) | (1 << TXEN ) ;
+    UCSRB = (1 << RXCIE ) | (1 << RXEN ) | (1 << TXEN ) ;
 
     UCSRC = (1 << URSEL ) | (1 << UCSZ0 ) | (1 << UCSZ1 ) ; // Use 8 - bit character sizes
 #ifdef debug_USART
@@ -66,23 +66,9 @@ void transmit_string_USART(char* data)
     }
 }
 
-uint8_t USART_RX_lenkte_RB()
-{
-    return RB_usart_RX_lenkte;
-}
-
-uint8_t USART_RX_RB()
-{
-    ++RB_usart_RX_Stop;
-#ifdef RB_usart_masker
-    RB_usart_RX_Stop &= RB_usart_masker;
-#endif
-    --RB_usart_RX_lenkte;
-    return RB_usart_RX[RB_usart_RX_Stop];
-}
-
 ISR(USART_RX_vect)
 {
+    PORTC=0xff;
 
 #ifdef RB_usart_masker
     if(RB_usart_RX_lenkte<RB_usart_masker)
@@ -95,18 +81,15 @@ ISR(USART_RX_vect)
         RB_usart_RX_Start &= RB_usart_masker;
 #endif
         ++RB_usart_RX_lenkte;
-        RB_usart_RX[RB_usart_RX_Start] = UDR;
+        *RB_usart_RX_Start = UDR;
+        //RB_usart_RX[RB_usart_RX_Start] = UDR;
     } else {
         /* groot probleem */
 #ifdef debug_USART
         transmit_string_USART("\n groot probleem");
 #endif
     }
-}
-
-ISR(USART_UDRE_vect)
-{
-    return ;
+    PORTC=0x00;
 }
 
 #ifdef __cplusplus

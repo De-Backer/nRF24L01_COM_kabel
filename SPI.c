@@ -55,7 +55,7 @@ void setup_spi()
 uint8_t send_spi(uint8_t out)
 {
     SPI_DATA_REGISTER = out;
-    while (!SPI_WAIT);
+    do {} while (!SPI_WAIT);
     return SPI_DATA_REGISTER;
 }
 
