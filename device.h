@@ -120,6 +120,7 @@ extern "C"{
 #define Set_CSN_High (nRF_CEN_PORT|=(1 <<nRF_CSN)) /* Set CSN High */
 
 #define SPI_DATA_REGISTER SPDR // SPI DATA REGISTER van de µc
+#define SPI_WAIT (SPSR & (1<<SPIF))
 
 /* USART */
 #define USART_BAUDRATE 115200 //115200 //500000

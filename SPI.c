@@ -54,9 +54,9 @@ void setup_spi()
 
 uint8_t send_spi(uint8_t out)
 {
-    SPDR = out;
-    while (!(SPSR & (1<<SPIF)));
-    return SPDR;
+    SPI_DATA_REGISTER = out;
+    while (!SPI_WAIT);
+    return SPI_DATA_REGISTER;
 }
 
 #ifdef __cplusplus
