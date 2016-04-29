@@ -84,4 +84,5 @@ flash.commands += -U flash:w:$${NAME}.hex
 flash.depends = $${NAME}.hex
 
 DISTFILES += \
-    README.md
+    README.md \
+    data_of_commit_89eca907f7680c300db86dfc00de56d25642d9f2.png
