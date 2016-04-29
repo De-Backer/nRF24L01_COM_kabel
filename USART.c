@@ -32,8 +32,8 @@ extern "C"{
 // setup USART
 void setup_USART()
 {
-    RB_usart_RX_Start=RB_usart_RX;
-    RB_usart_RX_Stop=RB_usart_RX;
+    RB_usart_RX_Start=0;
+    RB_usart_RX_Stop=0;
     RB_usart_RX_lenkte=0;
 
     /*Set baud rate */
@@ -68,7 +68,7 @@ void transmit_string_USART(char* data)
 
 ISR(USART_RX_vect)
 {
-    PORTC=0xff;
+    PORTC=0xff;/* report interupt start */
 
 #ifdef RB_usart_masker
     if(RB_usart_RX_lenkte<RB_usart_masker)
@@ -81,15 +81,14 @@ ISR(USART_RX_vect)
         RB_usart_RX_Start &= RB_usart_masker;
 #endif
         ++RB_usart_RX_lenkte;
-        *RB_usart_RX_Start = UDR;
-        //RB_usart_RX[RB_usart_RX_Start] = UDR;
+        RB_usart_RX[RB_usart_RX_Start] = UDR;
     } else {
         /* groot probleem */
 #ifdef debug_USART
         transmit_string_USART("\n groot probleem");
 #endif
     }
-    PORTC=0x00;
+    PORTC=0x00;/* report interupt stop */
 }
 
 #ifdef __cplusplus

@@ -17,15 +17,15 @@ NAME = main
 QMAKE_CC = avr-gcc
 QMAKE_CXX = avr-g++
 QMAKE_LINK = avr-g++
-#QMAKE_CFLAGS = -Wall -Os -Iusbdrv -mmcu=$${DEVICE}
+QMAKE_CFLAGS = -Wall -Os -Iusbdrv -mmcu=$${DEVICE}
 #unrolling the do { } while ( ) loop to speed up the code execution
-QMAKE_CFLAGS = -Wall -O3 -Iusbdrv -mmcu=$${DEVICE}
+#QMAKE_CFLAGS = -Wall -O3 -Iusbdrv -mmcu=$${DEVICE}
 
 # Customize the -mmcu flag
 
-#QMAKE_LFLAGS = -Os -Wl,--gc-sections -mmcu=$${DEVICE} -lm
+QMAKE_LFLAGS = -Os -Wl,--gc-sections -mmcu=$${DEVICE} -lm
 #unrolling the do { } while ( ) loop to speed up the code execution
-QMAKE_LFLAGS = -O3 -Wl,--gc-sections -mmcu=$${DEVICE} -lm
+#QMAKE_LFLAGS = -O3 -Wl,--gc-sections -mmcu=$${DEVICE} -lm
 
 QMAKE_EXTRA_TARGETS += eep hex flash
 
@@ -85,4 +85,5 @@ flash.depends = $${NAME}.hex
 
 DISTFILES += \
     README.md \
-    data_of_commit_89eca907f7680c300db86dfc00de56d25642d9f2.png
+    data_of_commit_89eca907f7680c300db86dfc00de56d25642d9f2.png \
+    fout_ontvagen_on_interupt_na_ping.png

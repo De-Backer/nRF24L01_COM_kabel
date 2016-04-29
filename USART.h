@@ -33,8 +33,8 @@ extern "C"{
  * ander geen vars gemaakt
 */
 //#define RB_usart_masker 0b11111111 /* 127byte masker */
-uint8_t *RB_usart_RX_Start;
-uint8_t *RB_usart_RX_Stop;
+uint8_t RB_usart_RX_Start;
+uint8_t RB_usart_RX_Stop;
 uint8_t RB_usart_RX_lenkte;
 #ifdef RB_usart_masker
 uint8_t RB_usart_RX[RB_usart_masker+1];

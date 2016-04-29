@@ -182,6 +182,7 @@ int main(void)
 #endif
 
 
+    wdt_enable(WDTO_1S); // enable 1s watchdog timer
 
     for (;;)
     {
@@ -199,6 +200,7 @@ int main(void)
             nRF_IRQ_was=1;
         }
 #endif
+        wdt_reset(); // keep the watchdog happy
 
         if(nRF_CE_PORT&(1<<nRF_CE))
         {
@@ -223,10 +225,7 @@ int main(void)
             {
                 /* data from USART */
 
-                Set_CSN_Low
-
-                //send_spi(W_TX_PAYLOAD);
-
+                Set_CSN_Low;
 
                 SPI_DATA_REGISTER=W_TX_PAYLOAD;
                 uint8_t condition=cont_payload_bytes;
@@ -237,36 +236,11 @@ int main(void)
     #endif
                     --RB_usart_RX_lenkte;
                     do {} while (!SPI_WAIT);
-                    SPI_DATA_REGISTER=*RB_usart_RX_Stop;
-                    //SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];
+                    SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];
                 } while (--condition);
                 do {} while (!SPI_WAIT);
 
-                //uint8_t cont=0;
-                //do {
-                    /* sent data from USART */
-
-                    /* dit werkt te traag 43 µs zonder verzending  kan naar 1µs gebracht worden */
-//                    send_spi(USART_RX_RB());
-
-                    /* 31 µs zonder verzending */
-                    /* ATmel: Tip #10 – Unrolling loops 23µs */
-//                    ++RB_usart_RX_Stop;
-//#ifdef RB_usart_masker
-//                    RB_usart_RX_Stop &= RB_usart_masker;
-//#endif
-//                    --RB_usart_RX_lenkte;
-//                    send_spi(RB_usart_RX[RB_usart_RX_Stop]);
-//
-//                    ++cont;
-//
-//                } while (cont<cont_payload_bytes);
-//                } while ((USART_RX_lenkte_RB()>0)&&cont<cont_payload_bytes);
-
                 Set_CSN_High;
-
-                asm ("nop");
-
 
                 /* config voor zenden */
                 write_register(NRF_CONFIG,0x4e);
@@ -278,6 +252,8 @@ int main(void)
 #ifdef IC_master
                 if(IC_master_Pin&(1<<IC_master)){
                     /* zender */
+
+                    /* lees bit PWR_UP in NRF_CONFIG */
 
                 } else {
                     /* ontvanger */
@@ -303,14 +279,23 @@ int main(void)
 
 ISR(INT1_vect)
 {
-    PORTC=0xff;
+    PORTC=0xff;/* report interupt start */
+
+    nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
+
     /* waarom un interupt? */
     Set_CSN_High;/* reset spi com */
+    uint8_t info;
 
     /* polling of nRF24L01 */
     Set_CSN_Low;
     SPI_DATA_REGISTER = NOP;
-    uint8_t info;
+    do {} while (!SPI_WAIT);
+    info = SPI_DATA_REGISTER;
+    Set_CSN_High;
+    /* test foult CSN High on send */
+    Set_CSN_Low;
+    SPI_DATA_REGISTER = NOP;
     do {} while (!SPI_WAIT);
     info = SPI_DATA_REGISTER;
     Set_CSN_High;
@@ -318,7 +303,6 @@ ISR(INT1_vect)
     if(info&(1<<RX_DR))/* RX Data Ready (is er data => lees data uit) */
     {
 
-        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
 
         /* lees data en clear bit RX_DR in NRF_STATUS */
         uint8_t var=cont_payload_bytes;
@@ -363,7 +347,6 @@ ISR(INT1_vect)
 
     if(info&(1<<TX_DS))/* Data sent (de zender geeft data succesvol verzonden)*/
     {
-        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
 
         /* clear bit TX_DS in NRF_STATUS en reset pin nRF_CE */
 
@@ -381,8 +364,6 @@ ISR(INT1_vect)
     if(info&(1<<MAX_RT))/* Comm fail (geen ontvankst bevesteging van de ontvanger)*/
     {
 
-        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
-
         /* tba: afhandelen van Comm fail */
 
         /* clear bit MAX_RT in NRF_STATUS */
@@ -393,8 +374,9 @@ ISR(INT1_vect)
         do {} while (!SPI_WAIT);
         Set_CSN_High;
     }
+    info=read_register(FIFO_STATUS);
 
-    if(!((1<<TX_EMPTY)&read_register(FIFO_STATUS)))
+    if(!((1<<TX_EMPTY)&info))
     {
         /* if not empty */
         /* is not Transmiter */
@@ -412,19 +394,62 @@ ISR(INT1_vect)
         /* start Transmitting */
         nRF_CE_PORT|=(1<<nRF_CE);
     } else {
+        if(!((1<<RX_EMPTY)&info)){
+            /* er is data in en fout in com spi */
+
+
+            /* lees data en clear bit RX_DR in NRF_STATUS */
+            uint8_t var=cont_payload_bytes;
+            if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
+            {
+                var=read_register(R_RX_PL_WID);
+            }
+            if(var>32)/* flush RX FIFO */
+            {
+                Set_CSN_Low;
+
+                SPI_DATA_REGISTER = FLUSH_RX;
+                do {} while (!SPI_WAIT);
+
+                Set_CSN_High;
+            } else {
+                /* data naar USART sturen */
+                /* maak un funxie met data buffer TBA */
+
+                Set_CSN_Low;
+
+                SPI_DATA_REGISTER = R_RX_PAYLOAD;
+                do {} while (!SPI_WAIT);
+                do {
+                    SPI_DATA_REGISTER = NOP;
+                    do {} while (!SPI_WAIT);
+                    do {} while (!(UCSRA & (1<<UDRE)));
+                    UDR = SPI_DATA_REGISTER;
+                } while (--var);
+
+                Set_CSN_High;
+
+            }
+            /* clear bit RX_DR in NRF_STATUS */
+            Set_CSN_Low;
+            SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_STATUS ) );
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER = (1<<RX_DR);
+            do {} while (!SPI_WAIT);
+            Set_CSN_High;
+        }
         /* else in standby */
         nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
     }
 
     if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
     {
-        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
         asm ("nop");
         asm ("nop");
         /* start ontvanger */
         nRF_CE_PORT|=(1<<nRF_CE);
     }
-    PORTC=0x00;
+    PORTC=0x00;/* report interupt stop */
 
 }
 #endif

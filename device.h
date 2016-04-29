@@ -29,6 +29,9 @@ extern "C"{
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+
+#include <avr/wdt.h>
+
 /* te bekijken: <util/atomic.h>
  * In order to implement atomic access to multi-byte objects,
  * consider using the macros from <util/atomic.h>, rather than
