@@ -68,6 +68,10 @@ extern "C"{
 #define IC_master_DDR  DDRD
 #define IC_master_Pin  PIND
 #define IC_master  2
+/* test
+ * tijd 1CE - 2IQR -3.3µs @ 1bytes */
+#define NRF_CONFIG_zender    0x4a
+#define NRF_CONFIG_ontvanger 0x3b
 
 
 /* IC_CONFIG for setup RF24L01 on USART and USART_BAUDRATE, oder
@@ -130,7 +134,7 @@ extern "C"{
 #define BAUD_PRESCALE (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
 uint8_t *data;
 
-#define cont_payload_bytes 6
+//#define cont_payload_bytes 6 //min 6
 
 #ifdef __cplusplus
 } // extern "C"

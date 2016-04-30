@@ -250,10 +250,22 @@ void ping_RF24L01()
         nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
 
         /* lees data en clear bit RX_DR in NRF_STATUS */
+#ifdef cont_payload_bytes
         uint8_t var=cont_payload_bytes;
+    #else
+        uint8_t var=0;
+    #endif
         if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
         {
-            var=read_register(R_RX_PL_WID);
+            Set_CSN_Low;
+
+            SPI_DATA_REGISTER = R_RX_PL_WID;
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER = NOP;
+            do {} while (!SPI_WAIT);
+            var=SPI_DATA_REGISTER;
+
+            Set_CSN_High;
         }
         if(var>32)/* flush RX FIFO */
         {
@@ -312,7 +324,7 @@ void ping_RF24L01()
         if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
         {
             /* set as Transmiter */
-            write_register(NRF_CONFIG,0x4e);
+            write_register(NRF_CONFIG,NRF_CONFIG_zender);
         }
 
         /* start Transmitting */

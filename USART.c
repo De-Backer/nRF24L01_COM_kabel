@@ -70,7 +70,6 @@ void transmit_string_USART(char* data)
 
 ISR(USART_RX_vect)
 {
-    PORTC=0xff;/* report interupt start */
 
 #ifdef RB_usart_masker
     if(RB_usart_RX_lenkte<RB_usart_masker)
@@ -87,12 +86,9 @@ ISR(USART_RX_vect)
     } else {
         /* groot probleem */
 #ifdef debug_USART
-        PORTC=0x00;/* report interupt stop */
-        PORTC=0xff;/* report interupt start */
         transmit_string_USART("\n groot probleem");
 #endif
     }
-    PORTC=0x00;/* report interupt stop */
 }
 
 #ifdef __cplusplus

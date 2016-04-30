@@ -89,9 +89,9 @@ int main(void)
     /* nRF24L01 Power Down Mode */
 #ifndef nRF_VDD
     /* no Reset Values! => full setup nRF24L01 */
-    full_read_registers(0);
+    //full_read_registers(0);
     full_reset_RF24L01();
-    full_read_registers(1);
+    //full_read_registers(1);
 #endif
     /* setup nRF24L01
      *
@@ -119,13 +119,17 @@ int main(void)
 */
 
     /* min. setup */
+#ifdef cont_payload_bytes
     write_register(RX_PW_P0,cont_payload_bytes);
+#endif
+    /* test
+     * tijd 1CE - 2IQR 199µs @ 5bytes
+     * tijd 1CE - 2IQR 192µs @ 3bytes*/
+    write_register(SETUP_AW,0x01);
 
     /*  Enhanced ShockBurst */
-    //val[0]=0x04;/* enabled Dynamic Payload Length */
-    //WriteToNrf(W,FEATURE,val,1);
-    //[0]=0x03;/* enabled Dynamic Payload Length */
-    //WriteToNrf(W,DYNPD,val,1);
+    write_register(FEATURE,0x04);/* enabled Dynamic Payload Length */
+    write_register(DYNPD,0x03); /* enabled Dynamic Payload Length */
     /*Enable ‘Auto Acknowledgment’ => full_reset_RF24L01(); is standaard */
     write_register(SETUP_RETR,0x2f);
     /* RX
@@ -149,14 +153,14 @@ int main(void)
 #ifdef IC_master
     if(IC_master_Pin&(1<<IC_master)){
         /* zender */
-        write_register(NRF_CONFIG,0x4e);
+        write_register(NRF_CONFIG,NRF_CONFIG_zender);
     } else {
         /* ontvanger */
-        write_register(NRF_CONFIG,0x3f);
+        write_register(NRF_CONFIG,NRF_CONFIG_ontvanger);
     }
 #else
     /* ontvanger */
-    write_register(NRF_CONFIG,0x3f);
+    write_register(NRF_CONFIG,NRF_CONFIG_ontvanger);
 #endif
     _delay_us(1500);
     /* staat nu in standby */
@@ -172,7 +176,7 @@ int main(void)
     //GIFR |=(1<<INTF2);
 
     sei();
-    full_read_registers(2);
+    //full_read_registers(2);
 
 #endif
 
@@ -182,8 +186,9 @@ int main(void)
 #endif
 
 
-    wdt_enable(WDTO_1S); // enable 1s watchdog timer
+    wdt_enable(WDTO_250MS); // enable 250ms watchdog timer
     uint8_t timer_delai_1=0,timer_delai_2=0;
+
 
     for (;;)
     {
@@ -242,14 +247,24 @@ int main(void)
 
             /* niet aan get zenden of ontvangen */
 
-            if(RB_usart_RX_lenkte>cont_payload_bytes)/* is er data te versturen? */
+            /* is er data te versturen? */
+#ifdef cont_payload_bytes
+            if(RB_usart_RX_lenkte>cont_payload_bytes)
+#else
+            if(RB_usart_RX_lenkte>0)
+#endif
             {
                 /* data from USART */
 
                 Set_CSN_Low;
 
                 SPI_DATA_REGISTER=W_TX_PAYLOAD;
-                uint8_t condition=cont_payload_bytes;
+#ifdef cont_payload_bytes
+        uint8_t condition=cont_payload_bytes;
+    #else
+        uint8_t condition=RB_usart_RX_lenkte;
+        if(condition>32)condition=32;
+    #endif
                 do {
                     ++RB_usart_RX_Stop;
     #ifdef RB_usart_masker
@@ -264,7 +279,7 @@ int main(void)
                 Set_CSN_High;
 
                 /* config voor zenden */
-                write_register(NRF_CONFIG,0x4e);
+                write_register(NRF_CONFIG,NRF_CONFIG_zender);
                 nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
 
             } else {
@@ -280,13 +295,13 @@ int main(void)
                     /* ontvanger */
                     /* zet in ontvangst modus */
                     /* als er data is word dit gewist => aan te passen */
-                    write_register(NRF_CONFIG,0x3f);
+                    write_register(NRF_CONFIG,NRF_CONFIG_ontvanger);
                     nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
                 }
 #else
     /* ontvanger */
                 /* zet in ontvangst modus */
-                write_register(NRF_CONFIG,0x3f);
+                write_register(NRF_CONFIG,NRF_CONFIG_ontvanger);
                 nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
 #endif
             }
@@ -300,7 +315,6 @@ int main(void)
 
 ISR(INT1_vect)
 {
-    PORTC=0xff;/* report interupt start */
 
     nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
 
@@ -326,10 +340,22 @@ ISR(INT1_vect)
 
 
         /* lees data en clear bit RX_DR in NRF_STATUS */
+#ifdef cont_payload_bytes
         uint8_t var=cont_payload_bytes;
+    #else
+        uint8_t var=0;
+    #endif
         if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
         {
-            var=read_register(R_RX_PL_WID);
+            Set_CSN_Low;
+
+            SPI_DATA_REGISTER = R_RX_PL_WID;
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER = NOP;
+            do {} while (!SPI_WAIT);
+            var=SPI_DATA_REGISTER;
+
+            Set_CSN_High;
         }
         if(var>32)/* flush RX FIFO */
         {
@@ -356,8 +382,6 @@ ISR(INT1_vect)
                 ++RB_usart_TX_lenkte;
                 do {} while (!SPI_WAIT);
                 RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
-                //do {} while (!(UCSRA & (1<<UDRE)));
-                //UDR = SPI_DATA_REGISTER;
             } while (--var);
 
             Set_CSN_High;
@@ -413,7 +437,7 @@ ISR(INT1_vect)
             Set_CSN_Low;
             SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_CONFIG ) );
             do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = 0x4e;
+            SPI_DATA_REGISTER = NRF_CONFIG_zender;
             do {} while (!SPI_WAIT);
             Set_CSN_High;
         }
@@ -426,10 +450,22 @@ ISR(INT1_vect)
 
 
             /* lees data en clear bit RX_DR in NRF_STATUS */
-            uint8_t var=cont_payload_bytes;
+#ifdef cont_payload_bytes
+        uint8_t var=cont_payload_bytes;
+    #else
+        uint8_t var=0;
+    #endif
             if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
             {
-                var=read_register(R_RX_PL_WID);
+                Set_CSN_Low;
+
+                SPI_DATA_REGISTER = R_RX_PL_WID;
+                do {} while (!SPI_WAIT);
+                SPI_DATA_REGISTER = NOP;
+                do {} while (!SPI_WAIT);
+                var=SPI_DATA_REGISTER;
+
+                Set_CSN_High;
             }
             if(var>32)/* flush RX FIFO */
             {
@@ -476,7 +512,6 @@ ISR(INT1_vect)
         /* start ontvanger */
         nRF_CE_PORT|=(1<<nRF_CE);
     }
-    PORTC=0x00;/* report interupt stop */
 
 }
 #endif
