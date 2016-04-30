@@ -183,9 +183,20 @@ int main(void)
 
 
     wdt_enable(WDTO_1S); // enable 1s watchdog timer
+    uint8_t timer_delai_1=0,timer_delai_2=0;
 
     for (;;)
     {
+        if(RB_usart_TX_lenkte>0){
+            ++RB_usart_TX_Stop;
+#ifdef RB_usart_masker
+            RB_usart_TX_Stop &= RB_usart_masker;
+#endif
+            --RB_usart_TX_lenkte;
+            do {} while (!(UCSRA & (1<<UDRE)));
+            UDR = RB_usart_TX[RB_usart_TX_Stop];
+        }
+
 #if !nRF_IRQ_is_avr_interupt
         /* poll pin nRF_IRQ */
         if((nRF_IRQ_Pin&(~(1<<nRF_IRQ)))&nRF_IRQ_was)/* hoog naar laag */
@@ -211,8 +222,18 @@ int main(void)
                 /* zender */
 
             } else {
-                ping_RF24L01();
-                _delay_ms(1);/* is iets kalmer */
+                if(RB_usart_TX_lenkte==0)/* maak buffer eerst leeg */
+                {
+                    ++timer_delai_1;
+                    if(timer_delai_1==0)
+                    {
+                        ++timer_delai_2;
+                        if(timer_delai_2==0)
+                        {
+                            ping_RF24L01();
+                        }
+                    }
+                }
             }
 
 
@@ -328,9 +349,15 @@ ISR(INT1_vect)
             do {} while (!SPI_WAIT);
             do {
                 SPI_DATA_REGISTER = NOP;
+                ++RB_usart_TX_Start;
+#ifdef RB_usart_masker
+                RB_usart_TX_Start &= RB_usart_masker;
+#endif
+                ++RB_usart_TX_lenkte;
                 do {} while (!SPI_WAIT);
-                do {} while (!(UCSRA & (1<<UDRE)));
-                UDR = SPI_DATA_REGISTER;
+                RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
+                //do {} while (!(UCSRA & (1<<UDRE)));
+                //UDR = SPI_DATA_REGISTER;
             } while (--var);
 
             Set_CSN_High;

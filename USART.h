@@ -32,14 +32,19 @@ extern "C"{
  * 6+127+127byte = 260byte SRAM for de ring buffer
  * ander geen vars gemaakt
 */
-//#define RB_usart_masker 0b11111111 /* 127byte masker */
+#define RB_usart_masker 0b00111111 /* 127byte masker */
 uint8_t RB_usart_RX_Start;
 uint8_t RB_usart_RX_Stop;
 uint8_t RB_usart_RX_lenkte;
+uint8_t RB_usart_TX_Start;
+uint8_t RB_usart_TX_Stop;
+uint8_t RB_usart_TX_lenkte;
 #ifdef RB_usart_masker
 uint8_t RB_usart_RX[RB_usart_masker+1];
+uint8_t RB_usart_TX[RB_usart_masker+1];
 #else
 uint8_t RB_usart_RX[256];
+uint8_t RB_usart_TX[256];
 #endif
 
 // setup USART

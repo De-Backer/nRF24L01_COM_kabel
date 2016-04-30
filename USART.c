@@ -35,6 +35,9 @@ void setup_USART()
     RB_usart_RX_Start=0;
     RB_usart_RX_Stop=0;
     RB_usart_RX_lenkte=0;
+    RB_usart_TX_Start=0;
+    RB_usart_TX_Stop=0;
+    RB_usart_TX_lenkte=0;
 
     /*Set baud rate */
     UBRRH =(BAUD_PRESCALE>>8);
@@ -51,8 +54,7 @@ void setup_USART()
 
 void transmit_USART(uint8_t data)
 {
-    while(!(UCSRA & (1<<UDRE)))
-        ;
+    do {} while (!(UCSRA & (1<<UDRE)));
     UDR = data;
     return ;
 }

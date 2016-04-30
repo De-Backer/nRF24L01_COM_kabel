@@ -255,7 +255,7 @@ void ping_RF24L01()
         {
             var=read_register(R_RX_PL_WID);
         }
-        if(data[0]>32)/* flush RX FIFO */
+        if(var>32)/* flush RX FIFO */
         {
             Set_CSN_Low;
 
