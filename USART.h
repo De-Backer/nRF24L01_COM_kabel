@@ -34,15 +34,15 @@ extern "C"{
  * ander geen vars gemaakt
 */
 #define RB_usart_masker 0b00111111 /* 63byte masker */
-uint8_t RB_usart_RX_Start;
+volatile uint8_t RB_usart_RX_Start;
 uint8_t RB_usart_RX_Stop;
-uint8_t RB_usart_RX_lenkte;
-uint8_t RB_usart_TX_Start;
+volatile uint8_t RB_usart_RX_lenkte;
+volatile uint8_t RB_usart_TX_Start;
 uint8_t RB_usart_TX_Stop;
-uint8_t RB_usart_TX_lenkte;
+volatile uint8_t RB_usart_TX_lenkte;
 #ifdef RB_usart_masker
-uint8_t RB_usart_RX[RB_usart_masker+1];
-uint8_t RB_usart_TX[RB_usart_masker+1];
+volatile uint8_t RB_usart_RX[RB_usart_masker+1];
+volatile uint8_t RB_usart_TX[RB_usart_masker+1];
 #else
 /* de atmega8535 kan dit niet aan zie data */
 uint8_t RB_usart_RX[256];

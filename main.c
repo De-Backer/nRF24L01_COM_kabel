@@ -121,15 +121,16 @@ int main(void)
     /* min. setup */
 #ifdef cont_payload_bytes
     write_register(RX_PW_P0,cont_payload_bytes);
+#else
+    /*  Enhanced ShockBurst */
+    write_register(FEATURE,0x04);/* enabled Dynamic Payload Length */
+    write_register(DYNPD,0x03); /* enabled Dynamic Payload Length */
 #endif
     /* test
      * tijd 1CE - 2IQR 199µs @ 5bytes
      * tijd 1CE - 2IQR 192µs @ 3bytes*/
     write_register(SETUP_AW,0x01);
 
-    /*  Enhanced ShockBurst */
-    write_register(FEATURE,0x04);/* enabled Dynamic Payload Length */
-    write_register(DYNPD,0x03); /* enabled Dynamic Payload Length */
     /*Enable ‘Auto Acknowledgment’ => full_reset_RF24L01(); is standaard */
     write_register(SETUP_RETR,0x2f);
     /* RX
@@ -186,6 +187,7 @@ int main(void)
 #endif
 
 
+    /* is gedaan omdat µc vastloopt ( uit de for(;;) loopt ) fout nog niet gevonden */
     wdt_enable(WDTO_250MS); // enable 250ms watchdog timer
     uint8_t timer_delai_1=0,timer_delai_2=0;
 
