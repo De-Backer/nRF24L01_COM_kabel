@@ -56,16 +56,16 @@ void transmit_USART(uint8_t data)
 {
     do {} while (!(UCSRA & (1<<UDRE)));
     UDR = data;
-    return ;
 }
 
 void transmit_string_USART(char* data)
 {
-    while(*data != 0x00)
+    do
     {
-        transmit_USART(*data);
-        data++;
-    }
+        do {} while (!(UCSRA & (1<<UDRE)));
+        UDR = *data;
+        ++data;
+    } while (*data != 0x00);
 }
 
 ISR(USART_RX_vect)
@@ -87,6 +87,8 @@ ISR(USART_RX_vect)
     } else {
         /* groot probleem */
 #ifdef debug_USART
+        PORTC=0x00;/* report interupt stop */
+        PORTC=0xff;/* report interupt start */
         transmit_string_USART("\n groot probleem");
 #endif
     }

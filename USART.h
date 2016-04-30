@@ -29,10 +29,11 @@ extern "C"{
 
 #include "device.h"
 /*
- * 6+127+127byte = 260byte SRAM for de ring buffer
+ * 6+128+128byte = 262byte SRAM for de ring buffer
+ * 6+64+64byte   = 134byte SRAM for de ring buffer
  * ander geen vars gemaakt
 */
-#define RB_usart_masker 0b00111111 /* 127byte masker */
+#define RB_usart_masker 0b00111111 /* 63byte masker */
 uint8_t RB_usart_RX_Start;
 uint8_t RB_usart_RX_Stop;
 uint8_t RB_usart_RX_lenkte;
@@ -43,6 +44,7 @@ uint8_t RB_usart_TX_lenkte;
 uint8_t RB_usart_RX[RB_usart_masker+1];
 uint8_t RB_usart_TX[RB_usart_masker+1];
 #else
+/* de atmega8535 kan dit niet aan zie data */
 uint8_t RB_usart_RX[256];
 uint8_t RB_usart_TX[256];
 #endif
