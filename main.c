@@ -347,7 +347,16 @@ ISR(INT1_vect)
     #else
         uint8_t var=0;
     #endif
-        if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
+        /* test 7.4µs => 5.7µs -1.7µs */
+        Set_CSN_Low;
+        SPI_DATA_REGISTER = (REGISTER_MASK & FEATURE);
+        do {} while (!SPI_WAIT);
+        SPI_DATA_REGISTER = NOP;
+        do {} while (!SPI_WAIT);
+        Set_CSN_High;
+        if(SPI_DATA_REGISTER & 0x04)
+        /* end test */
+        //if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
         {
             Set_CSN_Low;
 
@@ -368,8 +377,7 @@ ISR(INT1_vect)
 
             Set_CSN_High;
         } else {
-            /* data naar USART sturen */
-            /* maak un funxie met data buffer TBA */
+            /* data naar USART buffer sturen */
 
             Set_CSN_Low;
 
@@ -427,13 +435,31 @@ ISR(INT1_vect)
         do {} while (!SPI_WAIT);
         Set_CSN_High;
     }
-    info=read_register(FIFO_STATUS);
+    /* test 8.3µs => 6.4µs -1.9µs*/
+    Set_CSN_Low;
+    SPI_DATA_REGISTER = (REGISTER_MASK & FIFO_STATUS);
+    do {} while (!SPI_WAIT);
+    SPI_DATA_REGISTER = NOP;
+    do {} while (!SPI_WAIT);
+    Set_CSN_High;
+    info=SPI_DATA_REGISTER;
+    /* end test */
+    //info=read_register(FIFO_STATUS);
 
     if(!((1<<TX_EMPTY)&info))
     {
         /* if not empty */
         /* is not Transmiter */
-        if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
+        /* test */
+        Set_CSN_Low;
+        SPI_DATA_REGISTER = (REGISTER_MASK & NRF_CONFIG);
+        do {} while (!SPI_WAIT);
+        SPI_DATA_REGISTER = NOP;
+        do {} while (!SPI_WAIT);
+        Set_CSN_High;
+        if(SPI_DATA_REGISTER & (1<<PRIM_RX))
+        /* end test */
+        //if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
         {
             /* set as Transmiter */
             Set_CSN_Low;
@@ -457,7 +483,17 @@ ISR(INT1_vect)
     #else
         uint8_t var=0;
     #endif
-            if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
+
+            /* test */
+            Set_CSN_Low;
+            SPI_DATA_REGISTER = (REGISTER_MASK & FEATURE);
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER = NOP;
+            do {} while (!SPI_WAIT);
+            Set_CSN_High;
+            if(SPI_DATA_REGISTER & 0x04)
+            /* end test */
+            //if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
             {
                 Set_CSN_Low;
 
@@ -507,7 +543,16 @@ ISR(INT1_vect)
         nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
     }
 
-    if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
+    /* test */
+    Set_CSN_Low;
+    SPI_DATA_REGISTER = (REGISTER_MASK & NRF_CONFIG);
+    do {} while (!SPI_WAIT);
+    SPI_DATA_REGISTER = NOP;
+    do {} while (!SPI_WAIT);
+    Set_CSN_High;
+    if(SPI_DATA_REGISTER & (1<<PRIM_RX))
+    /* end test */
+    //if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
     {
         asm ("nop");
         asm ("nop");
