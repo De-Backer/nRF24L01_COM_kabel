@@ -236,13 +236,19 @@ void nRF_IRQ_pin_triger()
 
 void ping_RF24L01()
 {
+    /* tba: idm als interupt nRF_IRQ */
     /* polling of nRF24L01 */
+    cli();/* dit moet altijd gebeuren als ur spi data verstuurt word
+             oftewel moet interupt nRF_IRQ geen spi gebruiken!!   */
+
     Set_CSN_Low;
     SPI_DATA_REGISTER = NOP;
     uint8_t info;
     do {} while (!SPI_WAIT);
     info = SPI_DATA_REGISTER;
     Set_CSN_High;
+
+    sei();
 
     if(info&(1<<RX_DR))/* RX Data Ready (is er data => lees data uit) */
     {
@@ -370,31 +376,49 @@ uint8_t Power_Down()
 */
 uint8_t read_status()
 {
+    cli();
+
     Set_CSN_Low;
-    uint8_t reg = send_spi(NOP);
+    SPI_DATA_REGISTER = NOP;
+    do {} while (!SPI_WAIT);//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
+    uint8_t reg = SPI_DATA_REGISTER;
     Set_CSN_High;
+
+    sei();
     return reg;
 }
 
 uint8_t read_register(uint8_t reg)
 {
+    /* als interupt nRF_IRQ aktif word is er un fout.... => reset µc */
+    cli();
+
     Set_CSN_Low;
 
-    send_spi( REGISTER_MASK & reg );	//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
-    reg = send_spi(NOP);		//Send DUMMY BYTE[NOP] to receive first byte in 'reg' register
+    SPI_DATA_REGISTER = REGISTER_MASK & reg;
+    do {} while (!SPI_WAIT);//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
+    SPI_DATA_REGISTER = NOP;//Send DUMMY BYTE[NOP] to receive first byte in 'reg' register
+    do {} while (!SPI_WAIT);
+    reg = SPI_DATA_REGISTER;
 
     Set_CSN_High;
+
+    sei();
     return reg;							//Return the registry read
 }
 
 void write_register(uint8_t reg, uint8_t value)
 {
+    cli();
     Set_CSN_Low;
 
-    send_spi( W_REGISTER | ( REGISTER_MASK & reg ) );
-    send_spi( value );
+    SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & reg ) );
+    do {} while (!SPI_WAIT);
+    SPI_DATA_REGISTER = value;
+    do {} while (!SPI_WAIT);
 
     Set_CSN_High;
+    sei();
 }
 
 #ifdef __cplusplus

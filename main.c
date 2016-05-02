@@ -188,18 +188,42 @@ int main(void)
 
 
     /* is gedaan omdat µc vastloopt ( uit de for(;;) loopt ) fout nog niet gevonden */
-    wdt_enable(WDTO_250MS); // enable 250ms watchdog timer
+    //wdt_enable(WDTO_250MS); // enable 250ms watchdog timer
     uint8_t timer_delai_1=0,timer_delai_2=0;
 
 
     for (;;)
     {
+        /* info buffers */
+        cli();/* dit moet altijd gebeuren als ur spi data verstuurt word
+                 oftewel moet interupt nRF_IRQ geen spi gebruiken!!   */
+        if((RB_usart_RX_Start!=RB_usart_RX_Stop)|(RB_usart_TX_Start!=RB_usart_TX_Stop))
+        {
+            debug_PORT=0x00;
+            SPI_DATA_REGISTER = RB_usart_RX_Start;
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER = RB_usart_RX_Stop;
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER = RB_usart_RX_lenkte;
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER = RB_usart_TX_Start;
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER = RB_usart_TX_Stop;
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER = RB_usart_TX_lenkte;
+            do {} while (!SPI_WAIT);
+            debug_PORT=0xff;
+        }
+        sei();
+
         if(RB_usart_TX_lenkte>0){
+            cli();/* moet atomike worden   */
             ++RB_usart_TX_Stop;
 #ifdef RB_usart_masker
             RB_usart_TX_Stop &= RB_usart_masker;
 #endif
             --RB_usart_TX_lenkte;
+            sei();
             do {} while (!(UCSRA & (1<<UDRE)));
             UDR = RB_usart_TX[RB_usart_TX_Stop];
         }
@@ -218,7 +242,7 @@ int main(void)
             nRF_IRQ_was=1;
         }
 #endif
-        wdt_reset(); // keep the watchdog happy
+        //wdt_reset(); // keep the watchdog happy
 
         if(nRF_CE_PORT&(1<<nRF_CE))
         {
@@ -246,7 +270,6 @@ int main(void)
 
         } else {
 
-
             /* niet aan get zenden of ontvangen */
 
             /* is er data te versturen? */
@@ -268,13 +291,15 @@ int main(void)
         if(condition>32)condition=32;
     #endif
                 do {
-                    ++RB_usart_RX_Stop;
-    #ifdef RB_usart_masker
-                        RB_usart_RX_Stop &= RB_usart_masker;
-    #endif
-                    --RB_usart_RX_lenkte;
                     do {} while (!SPI_WAIT);
-                    SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];
+                    SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];/* plaats in spi */
+                    cli();/* moet atomike worden   */
+                    ++RB_usart_RX_Stop;/* verplaats stop */
+    #ifdef RB_usart_masker
+                        RB_usart_RX_Stop &= RB_usart_masker; /* zorg dat stop niet buiten buffer gaat */
+    #endif
+                        --RB_usart_RX_lenkte;
+                        sei();
                 } while (--condition);
                 do {} while (!SPI_WAIT);
 
@@ -317,24 +342,24 @@ int main(void)
 
 ISR(INT1_vect)
 {
+    cli();
+    /* aanpasing:
+     * ipv: de status register uit te lezen en dan te reseten
+     *  reset status register en lees de voreg status
+     * besparing: 5.6µs op ontvanger, op zender zelfs 10.1µs
+ */
 
     nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
 
-    /* waarom un interupt? */
     Set_CSN_High;/* reset spi com */
-    uint8_t info;
 
-    /* polling of nRF24L01 */
     Set_CSN_Low;
-    SPI_DATA_REGISTER = NOP;
+    SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_STATUS ) );
+    uint8_t info;/* verplaatst omdat we hier wachten */
     do {} while (!SPI_WAIT);
-    info = SPI_DATA_REGISTER;
-    Set_CSN_High;
-    /* test foult CSN High on send */
-    Set_CSN_Low;
-    SPI_DATA_REGISTER = NOP;
+    info = SPI_DATA_REGISTER;/* lees status register waarom un interupt? */
+    SPI_DATA_REGISTER = (1<<RX_DR)|(1<<TX_DS)|(1<<MAX_RT);/* reset status register */
     do {} while (!SPI_WAIT);
-    info = SPI_DATA_REGISTER;
     Set_CSN_High;
 
     if(info&(1<<RX_DR))/* RX Data Ready (is er data => lees data uit) */
@@ -342,21 +367,20 @@ ISR(INT1_vect)
 
 
         /* lees data en clear bit RX_DR in NRF_STATUS */
+
+        Set_CSN_Low;
+        SPI_DATA_REGISTER = (REGISTER_MASK & FEATURE);
+        /* verplaatst omdat we hier wachten */
 #ifdef cont_payload_bytes
         uint8_t var=cont_payload_bytes;
     #else
         uint8_t var=0;
     #endif
-        /* test 7.4µs => 5.7µs -1.7µs */
-        Set_CSN_Low;
-        SPI_DATA_REGISTER = (REGISTER_MASK & FEATURE);
         do {} while (!SPI_WAIT);
         SPI_DATA_REGISTER = NOP;
         do {} while (!SPI_WAIT);
         Set_CSN_High;
         if(SPI_DATA_REGISTER & 0x04)
-        /* end test */
-        //if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
         {
             Set_CSN_Low;
 
@@ -397,45 +421,21 @@ ISR(INT1_vect)
             Set_CSN_High;
 
         }
-        /* clear bit RX_DR in NRF_STATUS */
-        Set_CSN_Low;
-        SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_STATUS ) );
-        do {} while (!SPI_WAIT);
-        SPI_DATA_REGISTER = (1<<RX_DR);
-        do {} while (!SPI_WAIT);
-        Set_CSN_High;
     }
 
     if(info&(1<<TX_DS))/* Data sent (de zender geeft data succesvol verzonden)*/
     {
-
         /* clear bit TX_DS in NRF_STATUS en reset pin nRF_CE */
 
-        /* clear bit TX_DS in NRF_STATUS */
-        Set_CSN_Low;
-        SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_STATUS ) );
-        do {} while (!SPI_WAIT);
-        SPI_DATA_REGISTER = (1<<TX_DS);
-        do {} while (!SPI_WAIT);
-        Set_CSN_High;
         /* is er nog data? */
-
     }
 
     if(info&(1<<MAX_RT))/* Comm fail (geen ontvankst bevesteging van de ontvanger)*/
     {
 
         /* tba: afhandelen van Comm fail */
-
-        /* clear bit MAX_RT in NRF_STATUS */
-        Set_CSN_Low;
-        SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_STATUS ) );
-        do {} while (!SPI_WAIT);
-        SPI_DATA_REGISTER = (1<<MAX_RT);
-        do {} while (!SPI_WAIT);
-        Set_CSN_High;
     }
-    /* test 8.3µs => 6.4µs -1.9µs*/
+
     Set_CSN_Low;
     SPI_DATA_REGISTER = (REGISTER_MASK & FIFO_STATUS);
     do {} while (!SPI_WAIT);
@@ -443,14 +443,11 @@ ISR(INT1_vect)
     do {} while (!SPI_WAIT);
     Set_CSN_High;
     info=SPI_DATA_REGISTER;
-    /* end test */
-    //info=read_register(FIFO_STATUS);
 
     if(!((1<<TX_EMPTY)&info))
     {
         /* if not empty */
         /* is not Transmiter */
-        /* test */
         Set_CSN_Low;
         SPI_DATA_REGISTER = (REGISTER_MASK & NRF_CONFIG);
         do {} while (!SPI_WAIT);
@@ -458,8 +455,6 @@ ISR(INT1_vect)
         do {} while (!SPI_WAIT);
         Set_CSN_High;
         if(SPI_DATA_REGISTER & (1<<PRIM_RX))
-        /* end test */
-        //if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
         {
             /* set as Transmiter */
             Set_CSN_Low;
@@ -484,7 +479,6 @@ ISR(INT1_vect)
         uint8_t var=0;
     #endif
 
-            /* test */
             Set_CSN_Low;
             SPI_DATA_REGISTER = (REGISTER_MASK & FEATURE);
             do {} while (!SPI_WAIT);
@@ -492,8 +486,6 @@ ISR(INT1_vect)
             do {} while (!SPI_WAIT);
             Set_CSN_High;
             if(SPI_DATA_REGISTER & 0x04)
-            /* end test */
-            //if(read_register(FEATURE)&0x04)/* is enabled Dynamic Payload Length on? */
             {
                 Set_CSN_Low;
 
@@ -514,8 +506,7 @@ ISR(INT1_vect)
 
                 Set_CSN_High;
             } else {
-                /* data naar USART sturen */
-                /* maak un funxie met data buffer TBA */
+                /* data naar USART buffer sturen */
 
                 Set_CSN_Low;
 
@@ -523,27 +514,23 @@ ISR(INT1_vect)
                 do {} while (!SPI_WAIT);
                 do {
                     SPI_DATA_REGISTER = NOP;
+                    ++RB_usart_TX_Start;
+    #ifdef RB_usart_masker
+                    RB_usart_TX_Start &= RB_usart_masker;
+    #endif
+                    ++RB_usart_TX_lenkte;
                     do {} while (!SPI_WAIT);
-                    do {} while (!(UCSRA & (1<<UDRE)));
-                    UDR = SPI_DATA_REGISTER;
+                    RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
                 } while (--var);
 
                 Set_CSN_High;
 
             }
-            /* clear bit RX_DR in NRF_STATUS */
-            Set_CSN_Low;
-            SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_STATUS ) );
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = (1<<RX_DR);
-            do {} while (!SPI_WAIT);
-            Set_CSN_High;
         }
         /* else in standby */
         nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
     }
 
-    /* test */
     Set_CSN_Low;
     SPI_DATA_REGISTER = (REGISTER_MASK & NRF_CONFIG);
     do {} while (!SPI_WAIT);
@@ -551,8 +538,6 @@ ISR(INT1_vect)
     do {} while (!SPI_WAIT);
     Set_CSN_High;
     if(SPI_DATA_REGISTER & (1<<PRIM_RX))
-    /* end test */
-    //if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
     {
         asm ("nop");
         asm ("nop");
@@ -560,6 +545,7 @@ ISR(INT1_vect)
         nRF_CE_PORT|=(1<<nRF_CE);
     }
 
+    sei();
 }
 #endif
 

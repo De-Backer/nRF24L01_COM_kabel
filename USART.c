@@ -70,6 +70,7 @@ void transmit_string_USART(char* data)
 
 ISR(USART_RX_vect)
 {
+    cli();
 
 #ifdef RB_usart_masker
     if(RB_usart_RX_lenkte<RB_usart_masker)
@@ -77,18 +78,19 @@ ISR(USART_RX_vect)
     if(RB_usart_RX_lenkte<255)
 #endif
     {
-        ++RB_usart_RX_Start;
+        RB_usart_RX[RB_usart_RX_Start] = UDR;/* plaats in buffer */
+        ++RB_usart_RX_Start;/* verplaats start */
 #ifdef RB_usart_masker
-        RB_usart_RX_Start &= RB_usart_masker;
+        RB_usart_RX_Start &= RB_usart_masker; /* zorg dat start niet buiten buffer gaat */
 #endif
-        ++RB_usart_RX_lenkte;
-        RB_usart_RX[RB_usart_RX_Start] = UDR;
+        ++RB_usart_RX_lenkte;/* x data in buffer */
     } else {
         /* groot probleem */
 #ifdef debug_USART
         transmit_string_USART("\n groot probleem");
 #endif
     }
+    sei();
 }
 
 #ifdef __cplusplus
