@@ -176,10 +176,12 @@ int main(void)
     //MCUCSR &=(~(1<<ISC2));
     //GIFR |=(1<<INTF2);
 
-    sei();
     //full_read_registers(2);
 
 #endif
+
+    /* intrupt master flag */
+    sei();
 
 #if !nRF_IRQ_is_avr_interupt
         /* toestand pin nRF_IRQ */
@@ -189,7 +191,7 @@ int main(void)
 
     /* is gedaan omdat µc vastloopt ( uit de for(;;) loopt ) fout nog niet gevonden */
     //wdt_enable(WDTO_250MS); // enable 250ms watchdog timer
-    uint8_t timer_delai_1=0,timer_delai_2=0;
+//    uint8_t timer_delai_1=0,timer_delai_2=0;
 
 
     for (;;)
@@ -232,10 +234,8 @@ int main(void)
         /* poll pin nRF_IRQ */
         if((nRF_IRQ_Pin&(~(1<<nRF_IRQ)))&nRF_IRQ_was)/* hoog naar laag */
         {
-            debug_PORT=0x00;
             nRF_IRQ_was=0;
             nRF_IRQ_pin_triger();
-            debug_PORT=0xff;
         }
         if((nRF_IRQ_Pin&(1<<nRF_IRQ))&(nRF_IRQ_was==0))/* laag naar hoog */
         {
@@ -253,18 +253,19 @@ int main(void)
                 /* zender */
 
             } else {
-                if(RB_usart_TX_lenkte==0)/* maak buffer eerst leeg */
-                {
-                    ++timer_delai_1;
-                    if(timer_delai_1==0)
-                    {
-                        ++timer_delai_2;
-                        if(timer_delai_2==0)
-                        {
-                            ping_RF24L01();
-                        }
-                    }
-                }
+
+//                if(RB_usart_TX_lenkte==0)/* maak buffer eerst leeg */
+//                {
+//                    ++timer_delai_1;
+//                    if(timer_delai_1==0)
+//                    {
+//                        ++timer_delai_2;
+//                        if(timer_delai_2==0)
+//                        {
+//                            ping_RF24L01();
+//                        }
+//                    }
+//                }
             }
 
 
