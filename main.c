@@ -249,10 +249,10 @@ int main(void)
 
             /* nRF_CE is al 5ms aan zonder interupt reset */
             /* kontroleer de status */
-            if(IC_master_Pin&(1<<IC_master)){
+//            if(IC_master_Pin&(1<<IC_master)){
                 /* zender */
 
-            } else {
+   //         } else {
 
 //                if(RB_usart_TX_lenkte==0)/* maak buffer eerst leeg */
 //                {
@@ -266,7 +266,7 @@ int main(void)
 //                        }
 //                    }
 //                }
-            }
+//            }
 
 
         } else {
@@ -436,6 +436,48 @@ ISR(INT1_vect)
 
         /* tba: afhandelen van Comm fail */
     }
+    if(info&(~(1<<TX_FULL)))/* TX FIFO full flag */
+    {
+        /*  */
+
+        /* is er data te versturen? */
+#ifdef cont_payload_bytes
+        if(RB_usart_RX_lenkte>cont_payload_bytes)
+#else
+        if(RB_usart_RX_lenkte>0)
+#endif
+        {
+            /* data from USART */
+
+            Set_CSN_Low;
+
+            SPI_DATA_REGISTER=W_TX_PAYLOAD;
+#ifdef cont_payload_bytes
+    uint8_t condition=cont_payload_bytes;
+#else
+    uint8_t condition=RB_usart_RX_lenkte;
+    if(condition>32)condition=32;
+#endif
+            do {
+                do {} while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];/* plaats in spi */
+
+                ++RB_usart_RX_Stop;/* verplaats stop */
+#ifdef RB_usart_masker
+                    RB_usart_RX_Stop &= RB_usart_masker; /* zorg dat stop niet buiten buffer gaat */
+#endif
+                    --RB_usart_RX_lenkte;
+
+            } while (--condition);
+            do {} while (!SPI_WAIT);
+
+            Set_CSN_High;
+
+            nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
+
+        }
+
+    }
 
     Set_CSN_Low;
     SPI_DATA_REGISTER = (REGISTER_MASK & FIFO_STATUS);
@@ -466,8 +508,6 @@ ISR(INT1_vect)
             Set_CSN_High;
         }
 
-        /* start Transmitting */
-        nRF_CE_PORT|=(1<<nRF_CE);
     } else {
         if(!((1<<RX_EMPTY)&info)){
             /* er is data in en fout in com spi */
