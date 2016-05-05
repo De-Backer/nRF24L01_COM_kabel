@@ -39,7 +39,7 @@ extern "C"{
 */
 //#define debug_main
 //#define debug_SPI
-#define debug_USART
+//#define debug_USART
 //#define debug_RF24L01
 
 /* clock */
@@ -70,8 +70,8 @@ extern "C"{
 #define IC_master  2
 /* test
  * tijd 1CE - 2IQR -3.3µs @ 1bytes */
-#define NRF_CONFIG_zender    0x4a
-#define NRF_CONFIG_ontvanger 0x3b
+#define NRF_CONFIG_zender    0x0a//
+#define NRF_CONFIG_ontvanger 0x0b//
 
 
 /* IC_CONFIG for setup RF24L01 on USART and USART_BAUDRATE, oder
@@ -110,11 +110,11 @@ extern "C"{
  *
  */
 /* interupt */
-#define nRF_IRQ_PORT PORTD //PORTB
-#define nRF_IRQ_DDR  DDRD  //DDRB
-#define nRF_IRQ_Pin  PIND  //PINB
-#define nRF_IRQ      3     //2      // HIGH to LOW INT2 interrupt
-#define nRF_IRQ_is_avr_interupt 1 // 1=yes 0=no
+#define nRF_IRQ_PORT PORTD //PORTD
+#define nRF_IRQ_DDR  DDRD  //DDRD
+#define nRF_IRQ_Pin  PIND  //PIND
+#define nRF_IRQ      3     //3      // HIGH to LOW INT2 interrupt
+#define nRF_IRQ_is_avr_interupt 0 // 1=yes 0=no
 
 /* SPI */
 #define nRF_SPI_PORT PORTB

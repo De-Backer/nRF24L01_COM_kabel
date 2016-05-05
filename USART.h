@@ -33,19 +33,24 @@ extern "C"{
  * 6+64+64byte   = 134byte SRAM for de ring buffer
  * ander geen vars gemaakt
 */
-#define RB_usart_masker 0b00111111 /* 63byte masker */
+//#define RB_usart_masker_RX 0b01111111 /* 63byte masker */
+#define RB_usart_masker_TX 0b00111111 /* 63byte masker */
 volatile uint8_t RB_usart_RX_Start;
 uint8_t RB_usart_RX_Stop;
 volatile uint8_t RB_usart_RX_lenkte;
 volatile uint8_t RB_usart_TX_Start;
 uint8_t RB_usart_TX_Stop;
 volatile uint8_t RB_usart_TX_lenkte;
-#ifdef RB_usart_masker
-volatile uint8_t RB_usart_RX[RB_usart_masker+1];
-volatile uint8_t RB_usart_TX[RB_usart_masker+1];
+#ifdef RB_usart_masker_RX
+volatile uint8_t RB_usart_RX[RB_usart_masker_RX+1];
 #else
 /* de atmega8535 kan dit niet aan zie data */
 uint8_t RB_usart_RX[256];
+#endif
+#ifdef RB_usart_masker_TX
+volatile uint8_t RB_usart_TX[RB_usart_masker_TX+1];
+#else
+/* de atmega8535 kan dit niet aan zie data */
 uint8_t RB_usart_TX[256];
 #endif
 

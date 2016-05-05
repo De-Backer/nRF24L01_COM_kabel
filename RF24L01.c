@@ -104,7 +104,7 @@ void full_reset_RF24L01()
 
     write_register(NRF_CONFIG,0x08);/* Configuration Register */
     write_register(EN_AA,0x3f);/* Enable ‘Auto Acknowledgment’ */
-    write_register(EN_RXADDR,0x01);/* Enabled RX Addresses */
+    write_register(EN_RXADDR,0x03);/* Enabled RX Addresses */
     write_register(SETUP_AW,0x03);/* Address Widths */
     write_register(SETUP_RETR,0x2f);/* Setup of Automatic Retransmission */
     write_register(RF_CH,0x02);/* RF Channel */
@@ -295,16 +295,22 @@ void nRF_IRQ_pin_triger()
 
             SPI_DATA_REGISTER = R_RX_PAYLOAD;
             do {} while (!SPI_WAIT);
-            do {
-                SPI_DATA_REGISTER = NOP;
-                ++RB_usart_TX_Start;
-#ifdef RB_usart_masker
-                RB_usart_TX_Start &= RB_usart_masker;
-#endif
-                ++RB_usart_TX_lenkte;
-                do {} while (!SPI_WAIT);
-                RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
-            } while (--var);
+            SPI_DATA_REGISTER= NOP;//dummie
+            --var;
+            do {} while (!SPI_WAIT);
+            if(var>0)
+            {
+                do {
+                    SPI_DATA_REGISTER = NOP;
+                    ++RB_usart_TX_Start;
+    #ifdef RB_usart_masker_TX
+                    RB_usart_TX_Start &= RB_usart_masker_TX;
+    #endif
+                    ++RB_usart_TX_lenkte;
+                    do {} while (!SPI_WAIT);
+                    RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
+                } while (--var);
+            }
 
             Set_CSN_High;
 
@@ -400,16 +406,23 @@ void nRF_IRQ_pin_triger()
 
                 SPI_DATA_REGISTER = R_RX_PAYLOAD;
                 do {} while (!SPI_WAIT);
-                do {
-                    SPI_DATA_REGISTER = NOP;
-                    ++RB_usart_TX_Start;
-    #ifdef RB_usart_masker
-                    RB_usart_TX_Start &= RB_usart_masker;
-    #endif
-                    ++RB_usart_TX_lenkte;
-                    do {} while (!SPI_WAIT);
-                    RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
-                } while (--var);
+                SPI_DATA_REGISTER= NOP;//dummie
+                --var;
+                do {} while (!SPI_WAIT);
+                if(var>0)
+                {
+                    do {
+                        SPI_DATA_REGISTER = NOP;
+                        ++RB_usart_TX_Start;
+        #ifdef RB_usart_masker_TX
+                        RB_usart_TX_Start &= RB_usart_masker_TX;
+        #endif
+                        ++RB_usart_TX_lenkte;
+                        do {} while (!SPI_WAIT);
+                        RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
+                    } while (--var);
+
+                }
 
                 Set_CSN_High;
 
@@ -427,6 +440,43 @@ void nRF_IRQ_pin_triger()
     Set_CSN_High;
     if(SPI_DATA_REGISTER & (1<<PRIM_RX))
     {
+
+        /* is er data te versturen? */
+#ifdef cont_payload_bytes
+        if(RB_usart_RX_lenkte>cont_payload_bytes)
+#else
+        if(RB_usart_RX_lenkte>0)
+#endif
+        {
+            /* data from USART */
+
+            Set_CSN_Low;
+
+            SPI_DATA_REGISTER=W_ACK_PAYLOAD;/* + PIPE ex: 0x00 = addr P0 */
+#ifdef cont_payload_bytes
+    uint8_t condition=cont_payload_bytes;
+#else
+    uint8_t condition=RB_usart_RX_lenkte;
+    if(condition>31)condition=31;
+#endif
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER=0x00;//dummie
+            do {
+                do {} while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];/* plaats in spi */
+                cli();/* moet atomike worden   */
+                ++RB_usart_RX_Stop;/* verplaats stop */
+#ifdef RB_usart_masker_RX
+                    RB_usart_RX_Stop &= RB_usart_masker_RX; /* zorg dat stop niet buiten buffer gaat */
+#endif
+                    --RB_usart_RX_lenkte;
+                    sei();
+            } while (--condition);
+            do {} while (!SPI_WAIT);
+
+            Set_CSN_High;
+
+        }
         asm ("nop");
         asm ("nop");
         /* start ontvanger */

@@ -123,7 +123,7 @@ int main(void)
     write_register(RX_PW_P0,cont_payload_bytes);
 #else
     /*  Enhanced ShockBurst */
-    write_register(FEATURE,0x04);/* enabled Dynamic Payload Length */
+    write_register(FEATURE,0x06);/* enabled Dynamic Payload Length, enabled Payload with ACK */
     write_register(DYNPD,0x03); /* enabled Dynamic Payload Length */
 #endif
     /* test
@@ -185,7 +185,7 @@ int main(void)
 
 #if !nRF_IRQ_is_avr_interupt
         /* toestand pin nRF_IRQ */
-    uint8_t nRF_IRQ_was=1;
+    //uint8_t nRF_IRQ_was=1;
 #endif
 
 
@@ -201,7 +201,7 @@ int main(void)
                  oftewel moet interupt nRF_IRQ geen spi gebruiken!!   */
         if((RB_usart_RX_Start!=RB_usart_RX_Stop)|(RB_usart_TX_Start!=RB_usart_TX_Stop))
         {
-            debug_PORT=0x00;
+            //if((RB_usart_RX_Start!=RB_usart_RX_Stop))debug_PORT=0x00;
             SPI_DATA_REGISTER = RB_usart_RX_Start;
             do {} while (!SPI_WAIT);
             SPI_DATA_REGISTER = RB_usart_RX_Stop;
@@ -214,15 +214,15 @@ int main(void)
             do {} while (!SPI_WAIT);
             SPI_DATA_REGISTER = RB_usart_TX_lenkte;
             do {} while (!SPI_WAIT);
-            debug_PORT=0xff;
+            //if((RB_usart_RX_Start!=RB_usart_RX_Stop))debug_PORT=0xff;
         }
         sei();
 
         if(RB_usart_TX_lenkte>0){
             cli();/* moet atomike worden   */
             ++RB_usart_TX_Stop;
-#ifdef RB_usart_masker
-            RB_usart_TX_Stop &= RB_usart_masker;
+#ifdef RB_usart_masker_TX
+            RB_usart_TX_Stop &= RB_usart_masker_TX;
 #endif
             --RB_usart_TX_lenkte;
             sei();
@@ -232,15 +232,19 @@ int main(void)
 
 #if !nRF_IRQ_is_avr_interupt
         /* poll pin nRF_IRQ */
-        if((nRF_IRQ_Pin&(~(1<<nRF_IRQ)))&nRF_IRQ_was)/* hoog naar laag */
+       // if((nRF_IRQ_Pin&(~(1<<nRF_IRQ)))&nRF_IRQ_was)/* hoog naar laag */
+
+        if(!(nRF_IRQ_Pin&(1<<nRF_IRQ)))/* laag */
         {
-            nRF_IRQ_was=0;
+         //   nRF_IRQ_was=0;
+            //debug_PORT=0x00;
             nRF_IRQ_pin_triger();
+            //debug_PORT=0xff;
         }
-        if((nRF_IRQ_Pin&(1<<nRF_IRQ))&(nRF_IRQ_was==0))/* laag naar hoog */
-        {
-            nRF_IRQ_was=1;
-        }
+        //if((nRF_IRQ_Pin&(1<<nRF_IRQ))&(nRF_IRQ_was==0))/* laag naar hoog */
+        //{
+        //    nRF_IRQ_was=1;
+        //}
 #endif
         //wdt_reset(); // keep the watchdog happy
 
@@ -289,15 +293,17 @@ int main(void)
         uint8_t condition=cont_payload_bytes;
     #else
         uint8_t condition=RB_usart_RX_lenkte;
-        if(condition>32)condition=32;
+        if(condition>31)condition=31;
     #endif
+                do {} while (!SPI_WAIT);
+                SPI_DATA_REGISTER=0x00;//dummie
                 do {
                     do {} while (!SPI_WAIT);
                     SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];/* plaats in spi */
                     cli();/* moet atomike worden   */
                     ++RB_usart_RX_Stop;/* verplaats stop */
-    #ifdef RB_usart_masker
-                        RB_usart_RX_Stop &= RB_usart_masker; /* zorg dat stop niet buiten buffer gaat */
+    #ifdef RB_usart_masker_RX
+                        RB_usart_RX_Stop &= RB_usart_masker_RX; /* zorg dat stop niet buiten buffer gaat */
     #endif
                         --RB_usart_RX_lenkte;
                         sei();
@@ -316,6 +322,19 @@ int main(void)
 #ifdef IC_master
                 if(IC_master_Pin&(1<<IC_master)){
                     /* zender */
+
+                    /* test no data verzenden voor data te krijgen */
+                    Set_CSN_Low;
+
+                    SPI_DATA_REGISTER=W_TX_PAYLOAD;
+                    do {} while (!SPI_WAIT);
+                    SPI_DATA_REGISTER=0x00;
+                    do {} while (!SPI_WAIT);
+
+                    Set_CSN_High;
+                    /* config voor zenden */
+                    write_register(NRF_CONFIG,NRF_CONFIG_zender);
+                    nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
 
                     /* lees bit PWR_UP in NRF_CONFIG */
 
@@ -411,8 +430,8 @@ ISR(INT1_vect)
             do {
                 SPI_DATA_REGISTER = NOP;
                 ++RB_usart_TX_Start;
-#ifdef RB_usart_masker
-                RB_usart_TX_Start &= RB_usart_masker;
+#ifdef RB_usart_masker_TX
+                RB_usart_TX_Start &= RB_usart_masker_TX;
 #endif
                 ++RB_usart_TX_lenkte;
                 do {} while (!SPI_WAIT);
@@ -424,60 +443,18 @@ ISR(INT1_vect)
         }
     }
 
-    if(info&(1<<TX_DS))/* Data sent (de zender geeft data succesvol verzonden)*/
-    {
+    //if(info&(1<<TX_DS))/* Data sent (de zender geeft data succesvol verzonden)*/
+    //{
         /* clear bit TX_DS in NRF_STATUS en reset pin nRF_CE */
 
         /* is er nog data? */
-    }
+    //}
 
-    if(info&(1<<MAX_RT))/* Comm fail (geen ontvankst bevesteging van de ontvanger)*/
-    {
+    //if(info&(1<<MAX_RT))/* Comm fail (geen ontvankst bevesteging van de ontvanger)*/
+    //{
 
         /* tba: afhandelen van Comm fail */
-    }
-    if(info&(~(1<<TX_FULL)))/* TX FIFO full flag */
-    {
-        /*  */
-
-        /* is er data te versturen? */
-#ifdef cont_payload_bytes
-        if(RB_usart_RX_lenkte>cont_payload_bytes)
-#else
-        if(RB_usart_RX_lenkte>0)
-#endif
-        {
-            /* data from USART */
-
-            Set_CSN_Low;
-
-            SPI_DATA_REGISTER=W_TX_PAYLOAD;
-#ifdef cont_payload_bytes
-    uint8_t condition=cont_payload_bytes;
-#else
-    uint8_t condition=RB_usart_RX_lenkte;
-    if(condition>32)condition=32;
-#endif
-            do {
-                do {} while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];/* plaats in spi */
-
-                ++RB_usart_RX_Stop;/* verplaats stop */
-#ifdef RB_usart_masker
-                    RB_usart_RX_Stop &= RB_usart_masker; /* zorg dat stop niet buiten buffer gaat */
-#endif
-                    --RB_usart_RX_lenkte;
-
-            } while (--condition);
-            do {} while (!SPI_WAIT);
-
-            Set_CSN_High;
-
-            nRF_CE_PORT|=(1<<nRF_CE);//Start Transmitting
-
-        }
-
-    }
+    //}
 
     Set_CSN_Low;
     SPI_DATA_REGISTER = (REGISTER_MASK & FIFO_STATUS);
@@ -553,11 +530,14 @@ ISR(INT1_vect)
 
                 SPI_DATA_REGISTER = R_RX_PAYLOAD;
                 do {} while (!SPI_WAIT);
+                SPI_DATA_REGISTER= NOP;//dummie
+                --var;
+                do {} while (!SPI_WAIT);
                 do {
                     SPI_DATA_REGISTER = NOP;
                     ++RB_usart_TX_Start;
-    #ifdef RB_usart_masker
-                    RB_usart_TX_Start &= RB_usart_masker;
+    #ifdef RB_usart_masker_TX
+                    RB_usart_TX_Start &= RB_usart_masker_TX;
     #endif
                     ++RB_usart_TX_lenkte;
                     do {} while (!SPI_WAIT);

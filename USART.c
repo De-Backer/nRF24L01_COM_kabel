@@ -72,20 +72,22 @@ ISR(USART_RX_vect)
 {
     cli();
 
-#ifdef RB_usart_masker
-    if(RB_usart_RX_lenkte<RB_usart_masker)
+#ifdef RB_usart_masker_RX
+    if(RB_usart_RX_lenkte<RB_usart_masker_RX)
 #else
     if(RB_usart_RX_lenkte<255)
 #endif
     {
         RB_usart_RX[RB_usart_RX_Start] = UDR;/* plaats in buffer */
         ++RB_usart_RX_Start;/* verplaats start */
-#ifdef RB_usart_masker
-        RB_usart_RX_Start &= RB_usart_masker; /* zorg dat start niet buiten buffer gaat */
+#ifdef RB_usart_masker_RX
+        RB_usart_RX_Start &= RB_usart_masker_RX; /* zorg dat start niet buiten buffer gaat */
 #endif
         ++RB_usart_RX_lenkte;/* x data in buffer */
     } else {
         /* groot probleem */
+        debug_PORT=0x00;
+        debug_PORT=0xff;
 #ifdef debug_USART
         transmit_string_USART("\n groot probleem");
 #endif
