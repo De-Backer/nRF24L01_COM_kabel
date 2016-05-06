@@ -295,7 +295,7 @@ void nRF_IRQ_pin_triger()
 
             SPI_DATA_REGISTER = R_RX_PAYLOAD;
             do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER= NOP;//dummie
+            SPI_DATA_REGISTER= NOP;/* dummie_of_instruxie */
             --var;
             do {} while (!SPI_WAIT);
             if(var>0)
@@ -406,7 +406,7 @@ void nRF_IRQ_pin_triger()
 
                 SPI_DATA_REGISTER = R_RX_PAYLOAD;
                 do {} while (!SPI_WAIT);
-                SPI_DATA_REGISTER= NOP;//dummie
+                SPI_DATA_REGISTER= NOP;/* dummie_of_instruxie */
                 --var;
                 do {} while (!SPI_WAIT);
                 if(var>0)
@@ -460,7 +460,7 @@ void nRF_IRQ_pin_triger()
     if(condition>31)condition=31;
 #endif
             do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER=0x00;//dummie
+            SPI_DATA_REGISTER=0x00;/* dummie_of_instruxie */
             do {
                 do {} while (!SPI_WAIT);
                 SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];/* plaats in spi */

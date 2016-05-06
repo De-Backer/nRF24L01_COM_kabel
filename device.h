@@ -114,7 +114,7 @@ extern "C"{
 #define nRF_IRQ_DDR  DDRD  //DDRD
 #define nRF_IRQ_Pin  PIND  //PIND
 #define nRF_IRQ      3     //3      // HIGH to LOW INT2 interrupt
-#define nRF_IRQ_is_avr_interupt 0 // 1=yes 0=no
+#define nRF_IRQ_is_avr_interupt 1 // 1=yes 0=no
 
 /* SPI */
 #define nRF_SPI_PORT PORTB
@@ -122,7 +122,6 @@ extern "C"{
 #define nRF_SCK  7      // SCK  <> SCK µc
 #define nRF_MOSI 5      // MOSI <> MOSI µc
 #define nRF_MISO 6      // MISO <> MISO µc
-//#define Set_CSN_Low {nRF_CEN_PORT &=~(1 <<nRF_CSN);asm ("nop");} /* Set CSN Low */
 #define Set_CSN_Low {nRF_CEN_PORT &=~(1 <<nRF_CSN);} /* Set CSN Low */
 #define Set_CSN_High (nRF_CEN_PORT|=(1 <<nRF_CSN)) /* Set CSN High */
 

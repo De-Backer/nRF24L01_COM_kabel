@@ -33,7 +33,7 @@ extern "C"{
  * 6+64+64byte   = 134byte SRAM for de ring buffer
  * ander geen vars gemaakt
 */
-//#define RB_usart_masker_RX 0b01111111 /* 63byte masker */
+#define RB_usart_masker_RX 0b00111111 /* 63byte masker */
 #define RB_usart_masker_TX 0b00111111 /* 63byte masker */
 volatile uint8_t RB_usart_RX_Start;
 uint8_t RB_usart_RX_Stop;

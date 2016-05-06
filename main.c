@@ -183,11 +183,6 @@ int main(void)
     /* intrupt master flag */
     sei();
 
-#if !nRF_IRQ_is_avr_interupt
-        /* toestand pin nRF_IRQ */
-    //uint8_t nRF_IRQ_was=1;
-#endif
-
 
     /* is gedaan omdat µc vastloopt ( uit de for(;;) loopt ) fout nog niet gevonden */
     //wdt_enable(WDTO_250MS); // enable 250ms watchdog timer
@@ -201,7 +196,6 @@ int main(void)
                  oftewel moet interupt nRF_IRQ geen spi gebruiken!!   */
         if((RB_usart_RX_Start!=RB_usart_RX_Stop)|(RB_usart_TX_Start!=RB_usart_TX_Stop))
         {
-            //if((RB_usart_RX_Start!=RB_usart_RX_Stop))debug_PORT=0x00;
             SPI_DATA_REGISTER = RB_usart_RX_Start;
             do {} while (!SPI_WAIT);
             SPI_DATA_REGISTER = RB_usart_RX_Stop;
@@ -214,7 +208,6 @@ int main(void)
             do {} while (!SPI_WAIT);
             SPI_DATA_REGISTER = RB_usart_TX_lenkte;
             do {} while (!SPI_WAIT);
-            //if((RB_usart_RX_Start!=RB_usart_RX_Stop))debug_PORT=0xff;
         }
         sei();
 
@@ -232,19 +225,10 @@ int main(void)
 
 #if !nRF_IRQ_is_avr_interupt
         /* poll pin nRF_IRQ */
-       // if((nRF_IRQ_Pin&(~(1<<nRF_IRQ)))&nRF_IRQ_was)/* hoog naar laag */
-
         if(!(nRF_IRQ_Pin&(1<<nRF_IRQ)))/* laag */
         {
-         //   nRF_IRQ_was=0;
-            //debug_PORT=0x00;
             nRF_IRQ_pin_triger();
-            //debug_PORT=0xff;
         }
-        //if((nRF_IRQ_Pin&(1<<nRF_IRQ))&(nRF_IRQ_was==0))/* laag naar hoog */
-        //{
-        //    nRF_IRQ_was=1;
-        //}
 #endif
         //wdt_reset(); // keep the watchdog happy
 
@@ -296,7 +280,7 @@ int main(void)
         if(condition>31)condition=31;
     #endif
                 do {} while (!SPI_WAIT);
-                SPI_DATA_REGISTER=0x00;//dummie
+                SPI_DATA_REGISTER=0x00;/* dummie_of_instruxie */
                 do {
                     do {} while (!SPI_WAIT);
                     SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];/* plaats in spi */
@@ -427,16 +411,22 @@ ISR(INT1_vect)
 
             SPI_DATA_REGISTER = R_RX_PAYLOAD;
             do {} while (!SPI_WAIT);
-            do {
-                SPI_DATA_REGISTER = NOP;
-                ++RB_usart_TX_Start;
-#ifdef RB_usart_masker_TX
-                RB_usart_TX_Start &= RB_usart_masker_TX;
-#endif
-                ++RB_usart_TX_lenkte;
-                do {} while (!SPI_WAIT);
-                RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
-            } while (--var);
+            SPI_DATA_REGISTER= NOP;/* dummie_of_instruxie */
+            --var;
+            do {} while (!SPI_WAIT);
+            if(var>0)
+            {
+                do {
+                    SPI_DATA_REGISTER = NOP;
+                    ++RB_usart_TX_Start;
+    #ifdef RB_usart_masker_TX
+                    RB_usart_TX_Start &= RB_usart_masker_TX;
+    #endif
+                    ++RB_usart_TX_lenkte;
+                    do {} while (!SPI_WAIT);
+                    RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
+                } while (--var);
+            }
 
             Set_CSN_High;
 
@@ -530,19 +520,22 @@ ISR(INT1_vect)
 
                 SPI_DATA_REGISTER = R_RX_PAYLOAD;
                 do {} while (!SPI_WAIT);
-                SPI_DATA_REGISTER= NOP;//dummie
+                SPI_DATA_REGISTER= NOP;/* dummie_of_instruxie */
                 --var;
                 do {} while (!SPI_WAIT);
-                do {
-                    SPI_DATA_REGISTER = NOP;
-                    ++RB_usart_TX_Start;
-    #ifdef RB_usart_masker_TX
-                    RB_usart_TX_Start &= RB_usart_masker_TX;
-    #endif
-                    ++RB_usart_TX_lenkte;
-                    do {} while (!SPI_WAIT);
-                    RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
-                } while (--var);
+                if(var>0)
+                {
+                    do {
+                        SPI_DATA_REGISTER = NOP;
+                        ++RB_usart_TX_Start;
+        #ifdef RB_usart_masker_TX
+                        RB_usart_TX_Start &= RB_usart_masker_TX;
+        #endif
+                        ++RB_usart_TX_lenkte;
+                        do {} while (!SPI_WAIT);
+                        RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
+                    } while (--var);
+                }
 
                 Set_CSN_High;
 
