@@ -477,8 +477,8 @@ void nRF_IRQ_pin_triger()
             Set_CSN_High;
 
         }
-        asm ("nop");
-        asm ("nop");
+        //asm ("nop");
+        //asm ("nop");
         /* start ontvanger */
         nRF_CE_PORT|=(1<<nRF_CE);
     }
@@ -595,8 +595,8 @@ void ping_RF24L01()
     if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
     {
         nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
-        asm ("nop");
-        asm ("nop");
+        //asm ("nop");
+        //asm ("nop");
         /* start ontvanger */
         nRF_CE_PORT|=(1<<nRF_CE);
     }

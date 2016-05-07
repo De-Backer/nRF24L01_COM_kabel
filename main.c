@@ -211,7 +211,9 @@ int main(void)
         }
         sei();
 
-        if(RB_usart_TX_lenkte>0){
+        /* is utart buffer leeg? en is utart klaar voor volgende byte */
+        if((RB_usart_TX_lenkte>0)&&(UCSRA & (1<<UDRE)))
+        {
             cli();/* moet atomike worden   */
             ++RB_usart_TX_Stop;
 #ifdef RB_usart_masker_TX
@@ -219,7 +221,8 @@ int main(void)
 #endif
             --RB_usart_TX_lenkte;
             sei();
-            do {} while (!(UCSRA & (1<<UDRE)));
+            /* word getest in begin */
+            //do {} while (!(UCSRA & (1<<UDRE)));
             UDR = RB_usart_TX[RB_usart_TX_Stop];
         }
 
@@ -553,8 +556,43 @@ ISR(INT1_vect)
     Set_CSN_High;
     if(SPI_DATA_REGISTER & (1<<PRIM_RX))
     {
-        asm ("nop");
-        asm ("nop");
+
+        /* is er data te versturen? */
+#ifdef cont_payload_bytes
+        if(RB_usart_RX_lenkte>cont_payload_bytes)
+#else
+        if(RB_usart_RX_lenkte>0)
+#endif
+        {
+            /* data from USART */
+
+            Set_CSN_Low;
+
+            SPI_DATA_REGISTER=W_ACK_PAYLOAD;/* + PIPE ex: 0x00 = addr P0 */
+#ifdef cont_payload_bytes
+    uint8_t condition=cont_payload_bytes;
+#else
+    uint8_t condition=RB_usart_RX_lenkte;
+    if(condition>31)condition=31;
+#endif
+            do {} while (!SPI_WAIT);
+            SPI_DATA_REGISTER=0x00;/* dummie_of_instruxie */
+            do {
+                do {} while (!SPI_WAIT);
+                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];/* plaats in spi */
+                ++RB_usart_RX_Stop;/* verplaats stop */
+#ifdef RB_usart_masker_RX
+                    RB_usart_RX_Stop &= RB_usart_masker_RX; /* zorg dat stop niet buiten buffer gaat */
+#endif
+                    --RB_usart_RX_lenkte;
+            } while (--condition);
+            do {} while (!SPI_WAIT);
+
+            Set_CSN_High;
+
+        }
+        //asm ("nop");
+        //asm ("nop");
         /* start ontvanger */
         nRF_CE_PORT|=(1<<nRF_CE);
     }
