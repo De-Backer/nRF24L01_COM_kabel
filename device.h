@@ -29,7 +29,7 @@ extern "C"{
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-
+#include <util/atomic.h>
 #include <avr/wdt.h>
 
 /* te bekijken: <util/atomic.h>
@@ -54,6 +54,16 @@ extern "C"{
  * |#       #           4 CSN   3 CE    |
  * |###########         2 VDD   1 GND   |
  * |____________________________________|
+ *
+ * 1    GND     0V
+ * 2    VDD     3.3V
+ * 3    CE      zenden/ontvangen
+ * 4    CSN     instruxie
+ * 5    SCK     instruxie clok
+ * 6    MOSI    instruxie naar nRF24L01
+ * 7    MISO    instruxie naar µc
+ * 8    IRQ     opsie
+ *
  * */
 
 /* IO */
@@ -109,7 +119,9 @@ extern "C"{
  * Minimum CE high               10µs
  *
  */
-/* interupt */
+/* interupt
+ * als nRF_IRQ in commend staat dan is er geen IRQ_Pin aan µc
+*/
 #define nRF_IRQ_PORT PORTD //PORTD
 #define nRF_IRQ_DDR  DDRD  //DDRD
 #define nRF_IRQ_Pin  PIND  //PIND

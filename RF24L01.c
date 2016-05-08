@@ -227,270 +227,12 @@ void full_read_registers(uint8_t debug_nr)
     transmit_USART(read_register(FEATURE));
 }
 
-void nRF_IRQ_pin_triger()
-{
-    /* copie of ISR(INT1_vect) */
-    cli();
-    /* aanpasing:
-     * ipv: de status register uit te lezen en dan te reseten
-     *  reset status register en lees de voreg status
-     * besparing: 5.6µs op ontvanger, op zender zelfs 10.1µs
- */
-
-    nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
-
-    Set_CSN_High;/* reset spi com */
-
-    Set_CSN_Low;
-    SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_STATUS ) );
-    uint8_t info;/* verplaatst omdat we hier wachten */
-    do {} while (!SPI_WAIT);
-    info = SPI_DATA_REGISTER;/* lees status register waarom un interupt? */
-    SPI_DATA_REGISTER = (1<<RX_DR)|(1<<TX_DS)|(1<<MAX_RT);/* reset status register */
-    do {} while (!SPI_WAIT);
-    Set_CSN_High;
-
-    if(info&(1<<RX_DR))/* RX Data Ready (is er data => lees data uit) */
-    {
-
-
-        /* lees data en clear bit RX_DR in NRF_STATUS */
-
-        Set_CSN_Low;
-        SPI_DATA_REGISTER = (REGISTER_MASK & FEATURE);
-        /* verplaatst omdat we hier wachten */
-#ifdef cont_payload_bytes
-        uint8_t var=cont_payload_bytes;
-    #else
-        uint8_t var=0;
-    #endif
-        do {} while (!SPI_WAIT);
-        SPI_DATA_REGISTER = NOP;
-        do {} while (!SPI_WAIT);
-        Set_CSN_High;
-        if(SPI_DATA_REGISTER & 0x04)
-        {
-            Set_CSN_Low;
-
-            SPI_DATA_REGISTER = R_RX_PL_WID;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = NOP;
-            do {} while (!SPI_WAIT);
-            var=SPI_DATA_REGISTER;
-
-            Set_CSN_High;
-        }
-        if(var>32)/* flush RX FIFO */
-        {
-            Set_CSN_Low;
-
-            SPI_DATA_REGISTER = FLUSH_RX;
-            do {} while (!SPI_WAIT);
-
-            Set_CSN_High;
-        } else {
-            /* data naar USART buffer sturen */
-
-            Set_CSN_Low;
-
-            SPI_DATA_REGISTER = R_RX_PAYLOAD;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER= NOP;/* dummie_of_instruxie */
-            --var;
-            do {} while (!SPI_WAIT);
-            if(var>0)
-            {
-                do {
-                    SPI_DATA_REGISTER = NOP;
-                    ++RB_usart_TX_Start;
-    #ifdef RB_usart_masker_TX
-                    RB_usart_TX_Start &= RB_usart_masker_TX;
-    #endif
-                    ++RB_usart_TX_lenkte;
-                    do {} while (!SPI_WAIT);
-                    RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
-                } while (--var);
-            }
-
-            Set_CSN_High;
-
-        }
-    }
-
-    if(info&(1<<TX_DS))/* Data sent (de zender geeft data succesvol verzonden)*/
-    {
-        /* clear bit TX_DS in NRF_STATUS en reset pin nRF_CE */
-
-        /* is er nog data? */
-    }
-
-    if(info&(1<<MAX_RT))/* Comm fail (geen ontvankst bevesteging van de ontvanger)*/
-    {
-
-        /* tba: afhandelen van Comm fail */
-    }
-
-    Set_CSN_Low;
-    SPI_DATA_REGISTER = (REGISTER_MASK & FIFO_STATUS);
-    do {} while (!SPI_WAIT);
-    SPI_DATA_REGISTER = NOP;
-    do {} while (!SPI_WAIT);
-    Set_CSN_High;
-    info=SPI_DATA_REGISTER;
-
-    if(!((1<<TX_EMPTY)&info))
-    {
-        /* if not empty */
-        /* is not Transmiter */
-        Set_CSN_Low;
-        SPI_DATA_REGISTER = (REGISTER_MASK & NRF_CONFIG);
-        do {} while (!SPI_WAIT);
-        SPI_DATA_REGISTER = NOP;
-        do {} while (!SPI_WAIT);
-        Set_CSN_High;
-        if(SPI_DATA_REGISTER & (1<<PRIM_RX))
-        {
-            /* set as Transmiter */
-            Set_CSN_Low;
-            SPI_DATA_REGISTER = ( W_REGISTER | ( REGISTER_MASK & NRF_CONFIG ) );
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = NRF_CONFIG_zender;
-            do {} while (!SPI_WAIT);
-            Set_CSN_High;
-        }
-
-        /* start Transmitting */
-        nRF_CE_PORT|=(1<<nRF_CE);
-    } else {
-        if(!((1<<RX_EMPTY)&info)){
-            /* er is data in en fout in com spi */
-
-
-            /* lees data en clear bit RX_DR in NRF_STATUS */
-#ifdef cont_payload_bytes
-        uint8_t var=cont_payload_bytes;
-    #else
-        uint8_t var=0;
-    #endif
-
-            Set_CSN_Low;
-            SPI_DATA_REGISTER = (REGISTER_MASK & FEATURE);
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = NOP;
-            do {} while (!SPI_WAIT);
-            Set_CSN_High;
-            if(SPI_DATA_REGISTER & 0x04)
-            {
-                Set_CSN_Low;
-
-                SPI_DATA_REGISTER = R_RX_PL_WID;
-                do {} while (!SPI_WAIT);
-                SPI_DATA_REGISTER = NOP;
-                do {} while (!SPI_WAIT);
-                var=SPI_DATA_REGISTER;
-
-                Set_CSN_High;
-            }
-            if(var>32)/* flush RX FIFO */
-            {
-                Set_CSN_Low;
-
-                SPI_DATA_REGISTER = FLUSH_RX;
-                do {} while (!SPI_WAIT);
-
-                Set_CSN_High;
-            } else {
-                /* data naar USART buffer sturen */
-
-                Set_CSN_Low;
-
-                SPI_DATA_REGISTER = R_RX_PAYLOAD;
-                do {} while (!SPI_WAIT);
-                SPI_DATA_REGISTER= NOP;/* dummie_of_instruxie */
-                --var;
-                do {} while (!SPI_WAIT);
-                if(var>0)
-                {
-                    do {
-                        SPI_DATA_REGISTER = NOP;
-                        ++RB_usart_TX_Start;
-        #ifdef RB_usart_masker_TX
-                        RB_usart_TX_Start &= RB_usart_masker_TX;
-        #endif
-                        ++RB_usart_TX_lenkte;
-                        do {} while (!SPI_WAIT);
-                        RB_usart_TX[RB_usart_TX_Start]= SPI_DATA_REGISTER;
-                    } while (--var);
-
-                }
-
-                Set_CSN_High;
-
-            }
-        }
-        /* else in standby */
-        nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
-    }
-
-    Set_CSN_Low;
-    SPI_DATA_REGISTER = (REGISTER_MASK & NRF_CONFIG);
-    do {} while (!SPI_WAIT);
-    SPI_DATA_REGISTER = NOP;
-    do {} while (!SPI_WAIT);
-    Set_CSN_High;
-    if(SPI_DATA_REGISTER & (1<<PRIM_RX))
-    {
-
-        /* is er data te versturen? */
-#ifdef cont_payload_bytes
-        if(RB_usart_RX_lenkte>cont_payload_bytes)
-#else
-        if(RB_usart_RX_lenkte>0)
-#endif
-        {
-            /* data from USART */
-
-            Set_CSN_Low;
-
-            SPI_DATA_REGISTER=W_ACK_PAYLOAD;/* + PIPE ex: 0x00 = addr P0 */
-#ifdef cont_payload_bytes
-    uint8_t condition=cont_payload_bytes;
-#else
-    uint8_t condition=RB_usart_RX_lenkte;
-    if(condition>31)condition=31;
-#endif
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER=0x00;/* dummie_of_instruxie */
-            do {
-                do {} while (!SPI_WAIT);
-                SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];/* plaats in spi */
-                cli();/* moet atomike worden   */
-                ++RB_usart_RX_Stop;/* verplaats stop */
-#ifdef RB_usart_masker_RX
-                    RB_usart_RX_Stop &= RB_usart_masker_RX; /* zorg dat stop niet buiten buffer gaat */
-#endif
-                    --RB_usart_RX_lenkte;
-                    sei();
-            } while (--condition);
-            do {} while (!SPI_WAIT);
-
-            Set_CSN_High;
-
-        }
-        //asm ("nop");
-        //asm ("nop");
-        /* start ontvanger */
-        nRF_CE_PORT|=(1<<nRF_CE);
-    }
-
-    sei();
-}
-
 void ping_RF24L01()
 {
     /* tba: idm als interupt nRF_IRQ */
     /* polling of nRF24L01 */
-    cli();/* dit moet altijd gebeuren als ur spi data verstuurt word
+    cli();
+    /* dit moet altijd gebeuren als ur spi data verstuurt word
              oftewel moet interupt nRF_IRQ geen spi gebruiken!!   */
 
     Set_CSN_Low;
@@ -499,7 +241,6 @@ void ping_RF24L01()
     do {} while (!SPI_WAIT);
     info = SPI_DATA_REGISTER;
     Set_CSN_High;
-
     sei();
 
     if(info&(1<<RX_DR))/* RX Data Ready (is er data => lees data uit) */
@@ -595,8 +336,6 @@ void ping_RF24L01()
     if(((1<<PRIM_RX)&read_register(NRF_CONFIG)))
     {
         nRF_CE_PORT &=~(1 <<nRF_CE);/* reset pin (stop met zenden/ontvagen) */
-        //asm ("nop");
-        //asm ("nop");
         /* start ontvanger */
         nRF_CE_PORT|=(1<<nRF_CE);
     }
@@ -635,7 +374,6 @@ uint8_t read_status()
     do {} while (!SPI_WAIT);//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
     uint8_t reg = SPI_DATA_REGISTER;
     Set_CSN_High;
-
     sei();
     return reg;
 }
@@ -644,7 +382,6 @@ uint8_t read_register(uint8_t reg)
 {
     /* als interupt nRF_IRQ aktif word is er un fout.... => reset µc */
     cli();
-
     Set_CSN_Low;
 
     SPI_DATA_REGISTER = REGISTER_MASK & reg;
@@ -654,7 +391,6 @@ uint8_t read_register(uint8_t reg)
     reg = SPI_DATA_REGISTER;
 
     Set_CSN_High;
-
     sei();
     return reg;							//Return the registry read
 }

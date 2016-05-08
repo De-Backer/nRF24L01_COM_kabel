@@ -27,17 +27,6 @@
 extern "C"{
 #endif
 
-/*
- * void nRF_IRQ_pin_triger()
- * 1+1
- * uint8_t Power_Down()
- * 1
- * uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal)
- * 32+1
- *
- * => 36byte aan vars
-*/
-
 #include "device.h"
 #include "SPI.h"
 #include "nRF24L01.h"
@@ -51,7 +40,6 @@ void shutdown_RF24L01();
 void set_RF_channel_frequency(uint8_t frequency);
 void full_reset_RF24L01();
 void full_read_registers(uint8_t debug_nr);
-void nRF_IRQ_pin_triger();
 void ping_RF24L01();/* is alles ok? */
 uint8_t Power_Down();
 uint8_t read_status();/* zie fuxie met opm. */

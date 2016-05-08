@@ -17,7 +17,7 @@ NAME = main
 QMAKE_CC = avr-gcc
 QMAKE_CXX = avr-g++
 QMAKE_LINK = avr-g++
-QMAKE_CFLAGS = -Wall -Os -Iusbdrv -mmcu=$${DEVICE}
+QMAKE_CFLAGS = -Wall -Os -Iusbdrv -mmcu=$${DEVICE} -std=gnu99
 #unrolling the do { } while ( ) loop to speed up the code execution
 #QMAKE_CFLAGS = -Wall -O3 -Iusbdrv -mmcu=$${DEVICE}
 

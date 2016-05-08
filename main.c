@@ -33,7 +33,9 @@ extern "C"{
 #include "USART.h"
 #include "RF24L01.h"
 
-
+#if !nRF_IRQ_is_avr_interupt
+void nRF_IRQ_pin_triger();
+#endif
 
 void init_IO()
 {
@@ -89,9 +91,7 @@ int main(void)
     /* nRF24L01 Power Down Mode */
 #ifndef nRF_VDD
     /* no Reset Values! => full setup nRF24L01 */
-    //full_read_registers(0);
     full_reset_RF24L01();
-    //full_read_registers(1);
 #endif
     /* setup nRF24L01
      *
@@ -165,18 +165,12 @@ int main(void)
 #endif
     _delay_us(1500);
     /* staat nu in standby */
-    //transmit_string_USART("\n standby");
 
 #if nRF_IRQ_is_avr_interupt
     /* setup interupt */
     MCUCR |=(1<<ISC11);//The falling edge of INT1 generates an interrupt request.
     GICR |=(1<<INT1);// External Interrupt Request 2 Enable
 
-    //GICR |=(1<<INT2);// External Interrupt Request 2 Enable
-    //MCUCSR &=(~(1<<ISC2));
-    //GIFR |=(1<<INTF2);
-
-    //full_read_registers(2);
 
 #endif
 
@@ -192,35 +186,39 @@ int main(void)
     for (;;)
     {
         /* info buffers */
-        cli();/* dit moet altijd gebeuren als ur spi data verstuurt word
+        //cli();
+        /* dit moet altijd gebeuren als ur spi data verstuurt word
                  oftewel moet interupt nRF_IRQ geen spi gebruiken!!   */
-        if((RB_usart_RX_Start!=RB_usart_RX_Stop)|(RB_usart_TX_Start!=RB_usart_TX_Stop))
-        {
-            SPI_DATA_REGISTER = RB_usart_RX_Start;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = RB_usart_RX_Stop;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = RB_usart_RX_lenkte;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = RB_usart_TX_Start;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = RB_usart_TX_Stop;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = RB_usart_TX_lenkte;
-            do {} while (!SPI_WAIT);
-        }
-        sei();
+//        if((RB_usart_RX_Start!=RB_usart_RX_Stop)|(RB_usart_TX_Start!=RB_usart_TX_Stop))
+//        {
+//            SPI_DATA_REGISTER = RB_usart_RX_Start;
+//            do {} while (!SPI_WAIT);
+//            SPI_DATA_REGISTER = RB_usart_RX_Stop;
+//            do {} while (!SPI_WAIT);
+//            SPI_DATA_REGISTER = RB_usart_RX_lenkte;
+//            do {} while (!SPI_WAIT);
+//            SPI_DATA_REGISTER = RB_usart_TX_Start;
+//            do {} while (!SPI_WAIT);
+//            SPI_DATA_REGISTER = RB_usart_TX_Stop;
+//            do {} while (!SPI_WAIT);
+//            SPI_DATA_REGISTER = RB_usart_TX_lenkte;
+//            do {} while (!SPI_WAIT);
+//        }
+        //sei();
 
         /* is utart buffer leeg? en is utart klaar voor volgende byte */
         if((RB_usart_TX_lenkte>0)&&(UCSRA & (1<<UDRE)))
         {
-            cli();/* moet atomike worden   */
+            //cli();/* moet atomike worden   */
+            ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+            {
             ++RB_usart_TX_Stop;
 #ifdef RB_usart_masker_TX
             RB_usart_TX_Stop &= RB_usart_masker_TX;
 #endif
             --RB_usart_TX_lenkte;
-            sei();
+            }
+            //sei();
             /* word getest in begin */
             //do {} while (!(UCSRA & (1<<UDRE)));
             UDR = RB_usart_TX[RB_usart_TX_Stop];
@@ -237,29 +235,47 @@ int main(void)
 
         if(nRF_CE_PORT&(1<<nRF_CE))
         {
+#ifndef nRF_IRQ
+            /* no IRQ pin man status kontoleren */
+            /* nog te testen */
+            cli();
 
-            /* nRF_CE is al 5ms aan zonder interupt reset */
-            /* kontroleer de status */
-//            if(IC_master_Pin&(1<<IC_master)){
-                /* zender */
+            Set_CSN_Low;
+            SPI_DATA_REGISTER = NOP;
+            uint8_t reg;
+            do {} while (!SPI_WAIT);//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
+            do {
+                reg = SPI_DATA_REGISTER;
+                Set_CSN_High;
 
-   //         } else {
+                Set_CSN_Low;
+                SPI_DATA_REGISTER = NOP;
+                do {} while (!SPI_WAIT);//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
+            } while(reg==SPI_DATA_REGISTER;)
+            Set_CSN_High;
 
-//                if(RB_usart_TX_lenkte==0)/* maak buffer eerst leeg */
-//                {
-//                    ++timer_delai_1;
-//                    if(timer_delai_1==0)
-//                    {
-//                        ++timer_delai_2;
-//                        if(timer_delai_2==0)
-//                        {
-//                            ping_RF24L01();
-//                        }
-//                    }
-//                }
-//            }
+            sei();
+            /* als reg en SPI_DATA_REGISTER gelijk zijn verwerk info status */
 
 
+            if(reg&(1<<RX_DR))/* RX Data Ready (is er data => lees data uit) */
+            {
+                /* lees data en clear bit RX_DR in NRF_STATUS */
+            }
+
+            if(reg&(1<<TX_DS))/* Data sent (de zender geeft data succesvol verzonden)*/
+            {
+                /* clear bit TX_DS in NRF_STATUS en reset pin nRF_CE */
+
+                /* is er nog data? */
+            }
+
+            if(reg&(1<<MAX_RT))/* Comm fail (geen ontvankst bevesteging van de ontvanger)*/
+            {
+
+                /* tba: afhandelen van Comm fail */
+            }
+#endif
         } else {
 
             /* niet aan get zenden of ontvangen */
@@ -287,13 +303,16 @@ int main(void)
                 do {
                     do {} while (!SPI_WAIT);
                     SPI_DATA_REGISTER=RB_usart_RX[RB_usart_RX_Stop];/* plaats in spi */
-                    cli();/* moet atomike worden   */
+                    //cli();/* moet atomike worden   */
+                    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+                    {
                     ++RB_usart_RX_Stop;/* verplaats stop */
     #ifdef RB_usart_masker_RX
                         RB_usart_RX_Stop &= RB_usart_masker_RX; /* zorg dat stop niet buiten buffer gaat */
     #endif
                         --RB_usart_RX_lenkte;
-                        sei();
+                    }
+                        //sei();
                 } while (--condition);
                 do {} while (!SPI_WAIT);
 
@@ -346,8 +365,10 @@ int main(void)
 }
 
 #if nRF_IRQ_is_avr_interupt
-
-ISR(INT1_vect)
+ISR(INT1_vect)/*  */
+#else
+void nRF_IRQ_pin_triger()/*  */
+#endif
 {
     cli();
     /* aanpasing:
@@ -477,7 +498,8 @@ ISR(INT1_vect)
             do {} while (!SPI_WAIT);
             Set_CSN_High;
         }
-
+        /* start Transmitting */
+        nRF_CE_PORT|=(1<<nRF_CE);
     } else {
         if(!((1<<RX_EMPTY)&info)){
             /* er is data in en fout in com spi */
@@ -591,15 +613,11 @@ ISR(INT1_vect)
             Set_CSN_High;
 
         }
-        //asm ("nop");
-        //asm ("nop");
         /* start ontvanger */
         nRF_CE_PORT|=(1<<nRF_CE);
     }
-
     sei();
 }
-#endif
 
 #ifdef __cplusplus
 } // extern "C"
