@@ -368,13 +368,16 @@ uint8_t Power_Down()
 uint8_t read_status()
 {
     cli();
-
     Set_CSN_Low;
+
     SPI_DATA_REGISTER = NOP;
+    uint8_t reg=0;
     do {} while (!SPI_WAIT);//R_Register --> Set to Reading Mode, "reg" --> The registry which will be read
-    uint8_t reg = SPI_DATA_REGISTER;
+    reg = SPI_DATA_REGISTER;
+
     Set_CSN_High;
     sei();
+
     return reg;
 }
 

@@ -77,12 +77,14 @@ extern "C"{
 #define IC_master_PORT PORTD
 #define IC_master_DDR  DDRD
 #define IC_master_Pin  PIND
-#define IC_master  2
+/* te testen als niet gebruikt wordt
+ * 20160508 start ontvager test
+ */
+//#define IC_master  2
 /* test
  * tijd 1CE - 2IQR -3.3µs @ 1bytes */
 #define NRF_CONFIG_zender    0x0a//
 #define NRF_CONFIG_ontvanger 0x0b//
-
 
 /* IC_CONFIG for setup RF24L01 on USART and USART_BAUDRATE, oder
  * TBA...
@@ -121,12 +123,15 @@ extern "C"{
  */
 /* interupt
  * als nRF_IRQ in commend staat dan is er geen IRQ_Pin aan µc
+ * 20160508 start van code nog niet ok
 */
 #define nRF_IRQ_PORT PORTD //PORTD
 #define nRF_IRQ_DDR  DDRD  //DDRD
 #define nRF_IRQ_Pin  PIND  //PIND
 #define nRF_IRQ      3     //3      // HIGH to LOW INT2 interrupt
+#ifdef nRF_IRQ
 #define nRF_IRQ_is_avr_interupt 1 // 1=yes 0=no
+#endif
 
 /* SPI */
 #define nRF_SPI_PORT PORTB
