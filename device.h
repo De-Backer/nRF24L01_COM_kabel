@@ -80,7 +80,7 @@ extern "C"{
 /* te testen als niet gebruikt wordt
  * 20160508 start ontvager test
  */
-//#define IC_master  2
+#define IC_master  2
 /* test
  * tijd 1CE - 2IQR -3.3µs @ 1bytes */
 #define NRF_CONFIG_zender    0x0a//

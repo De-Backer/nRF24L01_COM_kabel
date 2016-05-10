@@ -181,6 +181,8 @@ int main(void)
     write_register(NRF_CONFIG,NRF_CONFIG_ontvanger);
 #ifndef IC_master
     is_zender=0;
+    uint8_t timer_delai_1=0;
+    //uint8_t timer_delai_2=0;
 #endif
 #endif
     _delay_us(1500);
@@ -203,32 +205,30 @@ int main(void)
 */
     //wdt_enable(WDTO_250MS); // enable 250ms watchdog timer
 
-    uint8_t timer_delai_1=0;
-    //uint8_t timer_delai_2=0;
 
 
     for (;;)
     {
         /* info buffers */
-        cli();
-        /* dit moet altijd gebeuren als ur spi data verstuurt word
-                 oftewel moet interupt nRF_IRQ geen spi gebruiken!!   */
-        if((RB_usart_RX_Start!=RB_usart_RX_Stop)|(RB_usart_TX_Start!=RB_usart_TX_Stop))
-        {
-            SPI_DATA_REGISTER = RB_usart_RX_Start;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = RB_usart_RX_Stop;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = RB_usart_RX_lenkte;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = RB_usart_TX_Start;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = RB_usart_TX_Stop;
-            do {} while (!SPI_WAIT);
-            SPI_DATA_REGISTER = RB_usart_TX_lenkte;
-            do {} while (!SPI_WAIT);
-        }
-        sei();
+//        cli();
+//        /* dit moet altijd gebeuren als ur spi data verstuurt word
+//                 oftewel moet interupt nRF_IRQ geen spi gebruiken!!   */
+//        if((RB_usart_RX_Start!=RB_usart_RX_Stop)|(RB_usart_TX_Start!=RB_usart_TX_Stop))
+//        {
+//            SPI_DATA_REGISTER = RB_usart_RX_Start;
+//            do {} while (!SPI_WAIT);
+//            SPI_DATA_REGISTER = RB_usart_RX_Stop;
+//            do {} while (!SPI_WAIT);
+//            SPI_DATA_REGISTER = RB_usart_RX_lenkte;
+//            do {} while (!SPI_WAIT);
+//            SPI_DATA_REGISTER = RB_usart_TX_Start;
+//            do {} while (!SPI_WAIT);
+//            SPI_DATA_REGISTER = RB_usart_TX_Stop;
+//            do {} while (!SPI_WAIT);
+//            SPI_DATA_REGISTER = RB_usart_TX_lenkte;
+//            do {} while (!SPI_WAIT);
+//        }
+//        sei();
 
         /* is utart buffer leeg? en is utart klaar voor volgende byte */
         if((RB_usart_TX_lenkte>0)&&(UCSRA & (1<<UDRE)))
